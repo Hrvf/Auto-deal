@@ -40,7 +40,7 @@
     <thead><tr><th>Date</th><th>Plateforme</th><th>Source</th><th>Fichier</th><th class="num">Ajoutées</th><th class="num">Mises à jour</th><th class="num">Ignorées</th><th>Statut</th></tr></thead>
     <tbody>
     {% for j in jobs %}
-      <tr><td>{{ j.created_at | date }}</td><td>{{ j.platform | platform }}</td><td>{{ j.source }}</td><td class="trunc">{{ j.filename or '—' }}</td>
+      <tr><td>{{ j.created_at | utc }}</td><td>{{ j.platform | platform }}</td><td>{{ j.source }}</td><td class="trunc">{{ j.filename or '—' }}</td>
         <td class="num">{{ j.created_count }}</td><td class="num">{{ j.updated_count }}</td><td class="num">{{ j.skipped_count }}</td>
         <td><span class="pill pill-{{ j.status }}">{{ {'ok': 'Réussi', 'partiel': 'Partiel', 'echec': 'Échec'}[j.status] }}</span>
         {% if j.errors %}<details><summary>{{ j.errors | length }} message(s)</summary><ul class="small">{% for e in j.errors[:20] %}<li>{{ e }}</li>{% endfor %}</ul></details>{% endif %}</td></tr>

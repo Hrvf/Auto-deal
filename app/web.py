@@ -1,7 +1,8 @@
 """Outils partagés par les routes : templates, session, authentification, CSRF."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from fastapi import Depends, HTTPException, Request
@@ -36,10 +37,14 @@ def fmt_pct(value) -> str:
     return f"{value * 100:.1f} %".replace(".", ",")
 
 
+PARIS = ZoneInfo("Europe/Paris")
+
+
 def fmt_date(value) -> str:
     if not value:
         return "—"
     if isinstance(value, datetime):
+        # Les horodatages techniques sont stockés en UTC ; les dates de vente saisies sont déjà locales.
         return value.strftime("%d/%m/%Y %H:%M")
     s = str(value)
     if len(s) >= 10 and s[4] == "-":
@@ -47,7 +52,14 @@ def fmt_date(value) -> str:
     return s
 
 
-templates.env.filters.update(eur=fmt_eur, num=fmt_int, pct=fmt_pct, date=fmt_date, platform=platform_name)
+def fmt_utc(value) -> str:
+    """Horodatage enregistré en UTC (ajout, analyse, import) affiché à l'heure de Paris."""
+    if not value:
+        return "—"
+    return value.replace(tzinfo=timezone.utc).astimezone(PARIS).strftime("%d/%m/%Y %H:%M")
+
+
+templates.env.filters.update(utc=fmt_utc, eur=fmt_eur, num=fmt_int, pct=fmt_pct, date=fmt_date, platform=platform_name)
 templates.env.globals.update(verdict=verdict, connectors=all_connectors)
 
 STATUS_LABELS = {"nouveau": "Nouveau", "suivi": "Suivi", "ecarte": "Écarté", "achete": "Acheté"}

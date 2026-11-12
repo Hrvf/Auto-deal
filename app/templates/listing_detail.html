@@ -140,8 +140,8 @@
       <dt>Version</dt><dd>{{ l.version or '—' }}</dd>
       <dt>Mise en circulation</dt><dd>{{ l.first_registration | date }}</dd>
       <dt>Cote saisie</dt><dd>{{ l.market_price_manual | eur }}</dd>
-      <dt>Ajoutée le</dt><dd>{{ l.first_seen_at | date }}</dd>
-      <dt>Analysée le</dt><dd>{{ a.computed_at | date }}</dd>
+      <dt>Ajoutée le</dt><dd>{{ l.first_seen_at | utc }}</dd>
+      <dt>Analysée le</dt><dd>{{ a.computed_at | utc }}</dd>
     </dl>
     {% if l.damages_text %}<h3>Description / défauts déclarés</h3><p class="prewrap">{{ l.damages_text }}</p>{% endif %}
     {% if l.raw and l.raw.get('texte_capture') %}

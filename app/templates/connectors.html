@@ -25,7 +25,7 @@
       <dt>Véhicules en base</dt><dd>{{ it.count }}</dd>
       <dt>Import manuel</dt><dd>{{ c.how_to_export }}</dd>
       {% if c.how_to_authorize %}<dt>Automatiser</dt><dd>{{ c.how_to_authorize }}</dd>{% endif %}
-      {% if cfg and cfg.last_sync_at %}<dt>Dernière synchro</dt><dd>{{ cfg.last_sync_at | date }} — {{ cfg.last_sync_status }}</dd>{% endif %}
+      {% if cfg and cfg.last_sync_at %}<dt>Dernière synchro</dt><dd>{{ cfg.last_sync_at | utc }} — {{ cfg.last_sync_status }}</dd>{% endif %}
     </dl>
     <div class="row-gap">
       <a class="btn btn-sm" href="/imports?plateforme={{ c.key }}">Importer</a>

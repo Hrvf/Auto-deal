@@ -69,7 +69,7 @@
     <section class="card">
       <h3>Derniers imports</h3>
       <ul class="list">
-        {% for j in jobs %}<li><span>{{ j.platform | platform }} · {{ j.source }}</span><span class="muted">+{{ j.created_count }} / ↻{{ j.updated_count }} · {{ j.created_at | date }}</span></li>{% else %}<li class="muted">Aucun import.</li>{% endfor %}
+        {% for j in jobs %}<li><span>{{ j.platform | platform }} · {{ j.source }}</span><span class="muted">+{{ j.created_count }} / ↻{{ j.updated_count }} · {{ j.created_at | utc }}</span></li>{% else %}<li class="muted">Aucun import.</li>{% endfor %}
       </ul>
     </section>
   </div>
