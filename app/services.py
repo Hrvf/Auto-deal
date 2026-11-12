@@ -127,3 +127,91 @@ def sync_feed(db: Session, platform: str, client: httpx.Client | None = None) ->
     cfg.last_sync_status = f"OK : {job.created_count} créées, {job.updated_count} mises à jour"
     db.commit()
     return job
+
+
+# --------------------------------------------------------------------------
+# Capture depuis l'extension navigateur (page consultée par l'utilisateur)
+# --------------------------------------------------------------------------
+HOST_PLATFORMS = {
+    "alcopa-auction.fr": "alcopa",
+    "leboncoin.fr": "leboncoin",
+    "vpauto.fr": "vpauto",
+    "encheres-domaine.gouv.fr": "domaine",
+    "bca.fr": "bca",
+    "bca.com": "bca",
+    "lacentrale.fr": "lacentrale",
+}
+MAX_CAPTURE_HTML = 6 * 1024 * 1024
+MAX_CAPTURE_TEXT = 300_000
+
+
+class CaptureError(Exception):
+    pass
+
+
+def platform_from_url(url: str | None) -> str | None:
+    host = (urlparse(url or "").hostname or "").lower()
+    for domain, key in HOST_PLATFORMS.items():
+        if host == domain or host.endswith("." + domain):
+            return key
+    return None
+
+
+def capture_page(db: Session, *, url: str, html: str | None, text: str | None, title: str | None,
+                 user_id: int | None, platform: str | None = None) -> tuple[ImportJob, Listing | None]:
+    from .connectors import parsers
+    from .connectors.base import ParseResult
+
+    if not url or not url.startswith(("http://", "https://")):
+        raise CaptureError("URL de page invalide.")
+    platform = platform or platform_from_url(url)
+    if not platform:
+        raise CaptureError("Ce site n'est pas une plateforme prise en charge.")
+    connector = get_connector(platform)
+    html = (html or "")[:MAX_CAPTURE_HTML]
+    text = (text or "")[:MAX_CAPTURE_TEXT]
+
+    result = connector.parse_file("capture.html", html.encode(), url=url) if html else ParseResult()
+    from_text = parsers._extract_from_text(text) if text else {}
+    if not result.listings and (title or text):
+        # Pas de données structurées : on reconstruit à partir du titre et du texte visible.
+        values = dict(from_text)
+        values["title"] = title
+        values["url"] = url
+        values["damages_text"] = parsers.extract_damage_section(text)
+        item = parsers.build_listing(values, connector, raw={"source": "capture (texte visible)"})
+        connector.apply_defaults(item)
+        result = ParseResult(listings=[] if "marque/titre" in item.problems() else [item],
+                             errors=[] if item.price else ["Prix non trouvé : à compléter sur la fiche."])
+        if not result.listings:
+            result.errors = ["Aucun véhicule reconnu sur cette page."]
+    elif result.listings and from_text:
+        # Compléter les champs absents des données structurées avec le texte visible.
+        item = result.listings[0]
+        weak = str(item.raw.get("source", "")).startswith("balises meta")
+        if title and (weak or not item.make):
+            # Données structurées absentes : le titre affiché (h1) est plus fiable que <title>.
+            from .connectors.normalize import split_title
+            item.title = title[:300]
+            mk, md = split_title(title)
+            item.make, item.model = item.make or mk, item.model or md
+            if weak:
+                item.make, item.model = mk or item.make, md or item.model
+        filler = parsers.build_listing({**from_text, "title": item.title or title}, connector)
+        for field_name in ("year", "first_registration", "mileage_km", "fiscal_hp", "power_hp", "fuel", "gearbox",
+                           "price", "department", "is_running"):
+            if getattr(item, field_name) in (None, "") and getattr(filler, field_name) not in (None, ""):
+                setattr(item, field_name, getattr(filler, field_name))
+        if item.ct_status == "inconnu":
+            item.ct_status = filler.ct_status
+        if platform != "leboncoin" and (weak or not item.damages_text):
+            item.damages_text = parsers.extract_damage_section(text) or item.damages_text
+        result.errors = [e for e in result.errors if not (e.startswith("Prix") and item.price)]
+    for item in result.listings:
+        item.url = url
+    job = save_parse_result(db, platform, "capture", result, filename=url[:255], user_id=user_id)
+    listing = None
+    if result.listings:
+        listing = db.scalar(select(Listing).where(Listing.platform == platform,
+                                                  Listing.external_id == result.listings[0].external_id))
+    return job, listing

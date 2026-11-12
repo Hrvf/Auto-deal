@@ -29,6 +29,16 @@ Comparateur automobile privé : il centralise les lots d'enchères (Alcopa Aucti
 
 **Aucun site n'est aspiré.** Un connecteur passe en « Automatique » dès qu'un administrateur configure un flux fourni par la plateforme et indique l'autorisation obtenue.
 
+## Extension Chrome « AutoDeal Capture » (Alcopa, Leboncoin…)
+
+Sur une annonce Leboncoin ou un lot Alcopa que vous consultez, un clic sur l'icône AutoDeal envoie la page au site, qui l'analyse et affiche la note, la marge et l'enchère maximale. L'extension ne lit que la page affichée, uniquement après votre clic (permission `activeTab`), et n'a aucun accès permanent aux sites.
+
+1. Paramètres → Extension navigateur → télécharger `autodeal-capture.zip`, décompresser.
+2. `chrome://extensions` → Mode développeur → « Charger l'extension non empaquetée ».
+3. Créer un jeton dans Paramètres, puis le coller avec l'adresse du site dans les réglages de l'extension.
+
+Côté serveur : `POST /api/capture` n'accepte qu'un jeton personnel (jamais le cookie de session), stocké sous forme d'empreinte SHA-256 et révocable. Les requêtes cross-origin ne sont acceptées que depuis une extension.
+
 ## Démarrage local
 
 ```bash
@@ -47,7 +57,7 @@ Pour retirer les données de démo : `python -m app.cli purger-demo`.
 pytest
 ```
 
-35 tests couvrent la normalisation, chaque format d'import, l'analyse (fiabilité, réparations, frais, enchère max, note), le parcours web complet et la sécurité (CSRF, limitation de connexion, redirections, droits). Ils couvrent aussi la synchronisation d'un flux autorisé, simulée.
+42 tests couvrent la normalisation, chaque format d'import, l'analyse (fiabilité, réparations, frais, enchère max, note), le parcours web complet et la sécurité (CSRF, limitation de connexion, redirections, droits). Ils couvrent aussi la synchronisation d'un flux autorisé (simulée) et la capture par l'extension (jeton, CORS, pages avec ou sans données structurées).
 
 ## Mise en ligne
 

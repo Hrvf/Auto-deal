@@ -78,3 +78,13 @@ class LoginRateLimiter:
 
 
 login_limiter = LoginRateLimiter()
+
+
+def new_api_token() -> tuple[str, str, str]:
+    """Retourne (jeton en clair, préfixe affichable, empreinte stockée)."""
+    token = "adc_" + secrets.token_urlsafe(32)
+    return token, token[:10], hashlib.sha256(token.encode()).hexdigest()
+
+
+def hash_api_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()

@@ -1,12 +1,13 @@
 """Point d'entrée de l'application AutoDeal Comparator."""
 from __future__ import annotations
 
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException, RequestValidationError
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -43,9 +44,37 @@ async def lifespan(_app: FastAPI):
     yield
 
 
+EXTENSION_ORIGIN = re.compile(r"^(chrome-extension://[a-p]{32}|moz-extension://[0-9a-f-]{36})$")
+EXTENSION_PATHS = ("/api/moi", "/api/capture")
+
+
+class ExtensionCORS(BaseHTTPMiddleware):
+    """Autorise uniquement les extensions de navigateur à appeler les routes à jeton (jamais les sites web).
+
+    Ces routes n'acceptent que le jeton personnel (pas de cookie) : il n'y a donc pas de risque CSRF."""
+
+    async def dispatch(self, request, call_next):
+        origin = request.headers.get("origin", "")
+        allowed = request.url.path in EXTENSION_PATHS and bool(EXTENSION_ORIGIN.match(origin))
+        if request.method == "OPTIONS" and allowed:
+            return Response(status_code=204, headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "GET, POST",
+                "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                "Access-Control-Max-Age": "600",
+                "Vary": "Origin",
+            })
+        response = await call_next(request)
+        if allowed:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+        return response
+
+
 def create_app() -> FastAPI:
     app = FastAPI(title="AutoDeal Comparator", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.add_middleware(SecurityHeaders)
+    app.add_middleware(ExtensionCORS)
     app.add_middleware(
         SessionMiddleware, secret_key=settings.secret_key, session_cookie="autodeal_session",
         max_age=settings.session_max_age, same_site="lax", https_only=settings.https_only,

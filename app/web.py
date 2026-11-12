@@ -73,6 +73,7 @@ def render(request: Request, name: str, ctx: dict | None = None, status_code: in
     context["csrf_token"] = get_csrf_token(request.session)
     context["flashes"] = request.session.pop("flash", [])
     context["path"] = request.url.path
+    context["request_base"] = str(request.base_url).rstrip("/")
     return templates.TemplateResponse(request, name, context, status_code=status_code)
 
 

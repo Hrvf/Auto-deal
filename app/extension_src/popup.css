@@ -1,0 +1,27 @@
+body { width: 320px; margin: 0; font: 13px/1.45 "Segoe UI", system-ui, sans-serif; color: #0f1b2d; }
+header { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: #0d1726; color: #fff; }
+header img { width: 28px; height: 28px; border-radius: 7px; }
+header div { display: flex; flex-direction: column; }
+header small { color: #9fb1cc; }
+main { padding: 14px; }
+.muted { color: #7a879c; margin-top: 0; }
+button, .btn { display: block; width: 100%; text-align: center; padding: 9px 12px; border-radius: 8px; border: 1px solid #e3e8f0; background: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; color: #0f1b2d; box-sizing: border-box; }
+.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; margin-bottom: 10px; }
+select { padding: 7px; border-radius: 8px; border: 1px solid #cfd7e4; font: inherit; }
+.err { color: #b42318; background: #fdecea; padding: 8px 10px; border-radius: 8px; }
+.spinner { width: 26px; height: 26px; border: 3px solid #e3e8f0; border-top-color: #1f6feb; border-radius: 50%; margin: 6px auto; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#busy p { text-align: center; }
+.res-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.res-head div { display: flex; flex-direction: column; }
+.res-head small { color: #7a879c; }
+.score { min-width: 52px; text-align: center; padding: 8px 6px; border-radius: 10px; font-size: 20px; font-weight: 800; background: #eef1f6; }
+.score.excellent { background: #0f9d6b; color: #fff; } .score.bon { background: #e5f6ef; color: #0b7a53; }
+.score.moyen { background: #fff6e0; color: #b7791f; }
+dl { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin: 0 0 10px; }
+dt { color: #7a879c; } dd { margin: 0; font-weight: 600; text-align: right; }
+.pos { color: #0f9d6b; } .neg { color: #d4382c; }
+#r-alerts { padding-left: 18px; margin: 0 0 12px; color: #b7791f; }
+footer { padding: 8px 14px 12px; text-align: right; }
+footer a { color: #7a879c; font-size: 12px; }

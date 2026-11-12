@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <header><img src="icons/icon32.png" alt=""><div><strong>AutoDeal Capture</strong><small id="where">…</small></div></header>
+  <main>
+    <section id="setup" hidden>
+      <p>Connectez d'abord l'extension à votre AutoDeal.</p>
+      <button id="open-options" class="primary">Configurer</button>
+    </section>
+    <section id="ready" hidden>
+      <p id="hint" class="muted"></p>
+      <label id="pick-wrap" hidden>Plateforme
+        <select id="pick">
+          <option value="">— choisir —</option>
+          <option value="alcopa">Alcopa Auction</option><option value="leboncoin">Leboncoin</option>
+          <option value="vpauto">VPauto</option><option value="domaine">Enchères Domaine</option>
+          <option value="bca">BCA</option><option value="lacentrale">La Centrale</option>
+          <option value="manuel">Autre source</option>
+        </select>
+      </label>
+      <button id="capture" class="primary">Analyser ce véhicule</button>
+    </section>
+    <section id="busy" hidden><div class="spinner"></div><p>Analyse en cours…</p></section>
+    <section id="error" hidden><p class="err" id="error-msg"></p><button id="retry">Réessayer</button></section>
+    <section id="result" hidden>
+      <div class="res-head"><span id="r-score" class="score"></span><div><b id="r-title"></b><small id="r-verdict"></small></div></div>
+      <dl>
+        <dt>Prix</dt><dd id="r-price"></dd>
+        <dt>Revente estimée</dt><dd id="r-resale"></dd>
+        <dt>Marge nette</dt><dd id="r-margin"></dd>
+        <dt>Enchère max</dt><dd id="r-bid"></dd>
+      </dl>
+      <ul id="r-alerts"></ul>
+      <a id="r-link" class="primary btn" target="_blank" rel="noopener">Ouvrir la fiche complète</a>
+    </section>
+  </main>
+  <footer><a href="#" id="settings-link">Réglages</a></footer>
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -10,18 +10,43 @@ from ..analysis.config import GeneralConfig, load_config, save_fees, save_genera
 from ..analysis.engine import analyze_all
 from ..connectors.registry import all_connectors
 from ..db import get_db
-from ..models import User
-from ..security import hash_password, verify_password
+from ..models import ApiToken, User
+from ..security import hash_password, new_api_token, verify_password
 from ..web import admin_user, csrf_protect, current_user, flash, render
 
 router = APIRouter()
 
 
-@router.get("/parametres")
-def settings_page(request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def _settings_ctx(db: Session, user: User, **extra) -> dict:
     cfg = load_config(db)
     users = db.scalars(select(User).order_by(User.id)).all() if user.is_admin else []
-    return render(request, "settings.html", {"cfg": cfg, "users": users, "connectors_list": all_connectors()})
+    tokens = db.scalars(select(ApiToken).where(ApiToken.user_id == user.id).order_by(ApiToken.id)).all()
+    return {"cfg": cfg, "users": users, "tokens": tokens, "connectors_list": all_connectors(), **extra}
+
+
+@router.get("/parametres")
+def settings_page(request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    return render(request, "settings.html", _settings_ctx(db, user))
+
+
+@router.post("/parametres/jetons", dependencies=[Depends(csrf_protect)])
+def create_token(request: Request, name: str = Form("Extension Chrome"), db: Session = Depends(get_db),
+                 user: User = Depends(current_user)):
+    token, prefix, digest = new_api_token()
+    db.add(ApiToken(user_id=user.id, name=name.strip()[:120] or "Extension", prefix=prefix, token_hash=digest))
+    db.commit()
+    # Le jeton n'est affiché qu'une seule fois, directement dans la réponse (jamais stocké en clair).
+    return render(request, "settings.html", _settings_ctx(db, user, new_token=token))
+
+
+@router.post("/parametres/jetons/{tid}/supprimer", dependencies=[Depends(csrf_protect)])
+def revoke_token(tid: int, request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    row = db.get(ApiToken, tid)
+    if row and row.user_id == user.id:
+        db.delete(row)
+        db.commit()
+        flash(request, "Jeton révoqué : l'extension qui l'utilisait est déconnectée.", "success")
+    return RedirectResponse("/parametres#extension", status_code=303)
 
 
 def _float(v, default: float) -> float:

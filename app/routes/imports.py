@@ -1,8 +1,12 @@
 """Imports manuels et pilotage des connecteurs."""
 from __future__ import annotations
 
+import io
+import zipfile
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -41,6 +45,20 @@ def effective_status(connector, cfg: ConnectorConfig | None) -> tuple[str, str]:
 def imports_page(request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
     jobs = db.scalars(select(ImportJob).order_by(ImportJob.id.desc()).limit(30)).all()
     return render(request, "imports.html", {"jobs": jobs, "selected": request.query_params.get("plateforme", "")})
+
+
+EXTENSION_DIR = Path(__file__).resolve().parent.parent / "extension_src"
+
+
+@router.get("/extension/autodeal-capture.zip")
+def extension_zip(user: User = Depends(current_user)):
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in sorted(EXTENSION_DIR.rglob("*")):
+            if f.is_file():
+                z.write(f, "autodeal-capture/" + f.relative_to(EXTENSION_DIR).as_posix())
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": 'attachment; filename="autodeal-capture.zip"'})
 
 
 @router.get("/imports/modele.csv")

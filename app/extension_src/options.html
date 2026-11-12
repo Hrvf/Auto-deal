@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>AutoDeal Capture — Réglages</title><link rel="stylesheet" href="options.css"></head>
+<body>
+  <main>
+    <h1><img src="icons/icon48.png" alt=""> AutoDeal Capture</h1>
+    <p>Reliez l'extension à votre site AutoDeal. Le jeton se crée dans <b>AutoDeal → Paramètres → Extension navigateur</b>.</p>
+    <form id="form">
+      <label>Adresse de votre AutoDeal<input id="server" type="url" placeholder="https://autodeal.mondomaine.fr" required></label>
+      <label>Jeton personnel<input id="token" type="password" placeholder="adc_…" required autocomplete="off"></label>
+      <button type="submit">Enregistrer et tester</button>
+    </form>
+    <p id="status" role="status"></p>
+    <h2>Utilisation</h2>
+    <ol>
+      <li>Ouvrez une annonce Leboncoin ou un lot Alcopa (ou VPauto, Domaine, BCA, La Centrale).</li>
+      <li>Cliquez sur l'icône AutoDeal dans la barre de Chrome, puis sur « Analyser ce véhicule ».</li>
+      <li>La note, la marge et l'enchère maximale s'affichent ; la fiche complète est dans AutoDeal.</li>
+    </ol>
+    <p class="muted">L'extension ne lit que la page affichée, uniquement quand vous cliquez. Elle ne navigue jamais seule sur les sites.</p>
+  </main>
+  <script src="common.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

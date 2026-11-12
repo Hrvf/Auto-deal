@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "AutoDeal Capture",
+  "description": "Envoie en un clic l'annonce ou le lot affiché (Alcopa, Leboncoin…) vers votre AutoDeal Comparator, qui l'analyse aussitôt.",
+  "version": "1.0.0",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": {
+    "default_title": "Analyser ce véhicule avec AutoDeal",
+    "default_popup": "popup.html",
+    "default_icon": {"16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png"}
+  },
+  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "icons": {"16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png"}
+}

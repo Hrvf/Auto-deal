@@ -460,16 +460,34 @@ def parse_html(content: bytes, connector: "Connector", url: str | None = None) -
 
 
 # ------------------------------------------------------------ Texte collé
+_NUM = r"(\d{1,3}(?:[ .  ]\d{3})+|\d{2,7})"
+_LABELED = {
+    "price": [rf"(?:mise [àa] prix|prix de d[ée]part|ench[èe]re actuelle|derni[èe]re ench[èe]re|offre actuelle|prix de vente|prix)\s*:?\s*{_NUM}\s*(?:€|eur)",],
+    "mileage_km": [rf"(?:kilom[ée]trage|compteur|km affich[ée]s?)\s*:?\s*{_NUM}"],
+    "fiscal_hp": [r"puissance fiscale\s*:?\s*(\d{1,2})"],
+    "power_hp": [r"puissance (?:din|r[ée]elle)?\s*:?\s*(\d{2,3})\s*ch"],
+}
+
+
 def _extract_from_text(text: str) -> dict:
     t = text.replace(" ", " ").replace(" ", " ")
     values: dict[str, Any] = {}
-    m = re.search(r"(\d{1,3}(?:[ .]\d{3})+|\d{4,7})\s?(?:km|kms|kilom)", t, re.I)
-    if m:
-        values["mileage_km"] = m.group(1)
-    m = re.search(r"(\d{1,3}(?:[ .]\d{3})+|\d{3,7})\s?(?:€|eur|euros)", t, re.I)
-    if m:
-        values["price"] = m.group(1)
-    m = re.search(r"(?:mise en circulation|mec|ann[ée]e)\s*:?\s*(\d{2}/\d{2}/\d{4}|\d{2}/\d{4}|\d{4})", t, re.I)
+    for field_name, patterns in _LABELED.items():
+        for p in patterns:
+            m = re.search(p, t, re.I)
+            if m:
+                values[field_name] = m.group(1)
+                break
+    if "mileage_km" not in values:
+        m = re.search(rf"{_NUM}\s?(?:km|kms|kilom)\b", t, re.I)
+        if m:
+            values["mileage_km"] = m.group(1)
+    if "price" not in values:
+        m = re.search(rf"{_NUM}\s?(?:€|eur\b|euros)", t, re.I)
+        if m:
+            values["price"] = m.group(1)
+    m = re.search(r"(?:mise en circulation|1[èe]re immatriculation|mec|ann[ée]e(?: mod[èe]le)?)\s*:?\s*"
+                  r"(\d{2}/\d{2}/\d{4}|\d{2}/\d{4}|\d{4})", t, re.I)
     if m:
         if "/" in m.group(1):
             values["first_registration"] = m.group(1)
@@ -477,24 +495,52 @@ def _extract_from_text(text: str) -> dict:
             values["year"] = m.group(1)
     elif (y := re.search(r"\b(20[0-3]\d|19[89]\d)\b", t)):
         values["year"] = y.group(1)
-    m = re.search(r"(\d{1,2})\s?cv\b", t, re.I)
-    if m:
-        values["fiscal_hp"] = m.group(1)
-    m = re.search(r"(\d{2,3})\s?ch\b", t, re.I)
-    if m:
-        values["power_hp"] = m.group(1)
-    fuel = normalize_fuel(t)
-    if fuel:
-        values["fuel"] = fuel
-    gb = normalize_gearbox(t)
+    if "fiscal_hp" not in values:
+        m = re.search(r"\b(\d{1,2})\s?cv\b", t, re.I)
+        if m:
+            values["fiscal_hp"] = m.group(1)
+    if "power_hp" not in values:
+        m = re.search(r"\b(\d{2,3})\s?ch\b", t, re.I)
+        if m:
+            values["power_hp"] = m.group(1)
+    m = re.search(r"(?:[ée]nergie|carburant)\s*:?\s*([A-Za-zéèÉ ]{3,25})", t, re.I)
+    fuel = normalize_fuel(m.group(1)) if m else None
+    values_fuel = fuel or normalize_fuel(t)
+    if values_fuel:
+        values["fuel"] = values_fuel
+    m = re.search(r"(?:bo[îi]te(?: de vitesses?)?|transmission)\s*:?\s*([A-Za-zéè ]{3,25})", t, re.I)
+    gb = (normalize_gearbox(m.group(1)) if m else None) or normalize_gearbox(t)
     if gb:
         values["gearbox"] = gb
+    m = re.search(r"contr[ôo]le technique\s*:?\s*([^\n]{2,40})", t, re.I)
+    if m:
+        values["ct_status"] = m.group(1)
     m = re.search(r"\b(\d{5})\b", t)
     if m:
         values["postal_code"] = m.group(1)
     if re.search(r"non[ -]roulant", t, re.I):
         values["is_running"] = False
     return values
+
+
+_DAMAGE_HEAD = re.compile(
+    r"(dommages?|d[ée]fauts?|remise en [ée]tat|observations?|bilan|expertise|[ée]tat g[ée]n[ée]ral|"
+    r"frais estim|r[ée]parations?|carrosserie|m[ée]canique|description)", re.I)
+
+
+def extract_damage_section(text: str, max_lines: int = 40) -> str | None:
+    """Extrait d'une page entière les lignes qui décrivent l'état du véhicule (et ignore menus et pieds de page)."""
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    keep: list[str] = []
+    i = 0
+    while i < len(lines) and len(keep) < max_lines:
+        if _DAMAGE_HEAD.search(lines[i]) and len(lines[i]) < 200:
+            block = lines[i:i + 6]
+            keep.extend(ln for ln in block if ln not in keep and len(ln) < 400)
+            i += 6
+        else:
+            i += 1
+    return "\n".join(keep)[:5000] or None
 
 
 def parse_free_text(text: str, connector: "Connector", url: str | None = None) -> ParseResult:

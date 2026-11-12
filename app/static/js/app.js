@@ -42,6 +42,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Copie du jeton
+  document.querySelectorAll("[data-copy]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      const input = document.getElementById(b.dataset.copy);
+      input.select();
+      try { await navigator.clipboard.writeText(input.value); b.textContent = "Copié ✓"; } catch (e) { document.execCommand("copy"); }
+    });
+  });
+
   // Fermeture des messages
   document.querySelectorAll("[data-dismiss]").forEach((b) => {
     b.addEventListener("click", () => b.parentElement.remove());

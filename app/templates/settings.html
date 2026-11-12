@@ -41,6 +41,38 @@
   </fieldset>
 </form>
 
+<section class="card" id="extension">
+  <h2>Extension navigateur « AutoDeal Capture »</h2>
+  <p>Sur une annonce Leboncoin ou un lot Alcopa (ou VPauto, Domaine, BCA, La Centrale) que vous consultez, un clic sur l'extension l'envoie ici et l'analyse aussitôt. L'extension ne lit que la page affichée, uniquement à votre demande.</p>
+  {% if new_token %}
+  <div class="token-box">
+    <b>Votre nouveau jeton — copiez-le maintenant, il ne sera plus affiché :</b>
+    <div class="row-gap"><input id="new-token" readonly value="{{ new_token }}"><button class="btn btn-sm" type="button" data-copy="new-token">Copier</button></div>
+  </div>
+  {% endif %}
+  <ol class="steps">
+    <li><a href="/extension/autodeal-capture.zip">Téléchargez l'extension</a> et décompressez-la.</li>
+    <li>Dans Chrome, ouvrez <code>chrome://extensions</code>, activez le <b>Mode développeur</b>, puis « Charger l'extension non empaquetée » et choisissez le dossier <code>autodeal-capture</code>.</li>
+    <li>Créez un jeton ci-dessous, puis collez-le avec l'adresse de ce site (<code>{{ request_base }}</code>) dans les réglages de l'extension.</li>
+  </ol>
+  <form method="post" action="/parametres/jetons" class="row-gap">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input name="name" value="Extension Chrome" maxlength="120" class="input-md">
+    <button class="btn btn-primary btn-sm" type="submit">Créer un jeton</button>
+  </form>
+  {% if tokens %}
+  <table class="table compact mt">
+    <thead><tr><th>Nom</th><th>Début du jeton</th><th>Créé le</th><th>Dernière utilisation</th><th></th></tr></thead>
+    <tbody>
+    {% for t in tokens %}
+      <tr><td>{{ t.name }}</td><td><code>{{ t.prefix }}…</code></td><td>{{ t.created_at | date }}</td><td>{{ t.last_used_at | date }}</td>
+        <td class="num"><form method="post" action="/parametres/jetons/{{ t.id }}/supprimer" class="inline" data-confirm="Révoquer ce jeton ?"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-danger" type="submit">Révoquer</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
 <div class="grid-2">
   <section class="card" id="compte">
     <h2>Mon mot de passe</h2>
