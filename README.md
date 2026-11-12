@@ -55,11 +55,21 @@ Pour retirer les données de démo : `python -m app.cli purger-demo`.
 
 ```bash
 pytest
+# sur PostgreSQL :
+TEST_DATABASE_URL=postgresql+psycopg://user@host:5432/db pytest
 ```
 
 42 tests couvrent la normalisation, chaque format d'import, l'analyse (fiabilité, réparations, frais, enchère max, note), le parcours web complet et la sécurité (CSRF, limitation de connexion, redirections, droits). Ils couvrent aussi la synchronisation d'un flux autorisé (simulée) et la capture par l'extension (jeton, CORS, pages avec ou sans données structurées).
 
-## Mise en ligne
+## Mise en ligne sur Render (recommandé, faisable depuis un téléphone)
+
+1. Sur render.com, se connecter avec GitHub, puis **New → Blueprint** et choisir le dépôt `Auto-deal`.
+2. Render lit `render.yaml` : un service web + une base PostgreSQL. Saisir une valeur pour `SETUP_TOKEN` (une phrase secrète de votre choix).
+3. Une fois déployé, ouvrir l'adresse `https://….onrender.com`, saisir le `SETUP_TOKEN` et créer le compte administrateur.
+
+Plan gratuit : le site se met en veille après une période d'inactivité (premier chargement lent), et la base gratuite expire au bout de 30 jours. Passer sur des plans payants pour un usage durable.
+
+## Mise en ligne avec Docker (autre hébergeur)
 
 1. Copier `.env.example` en `.env` et définir `SECRET_KEY`, `DATABASE_URL`, `SETUP_TOKEN`, `HTTPS_ONLY=true`.
 2. `docker compose up -d --build`

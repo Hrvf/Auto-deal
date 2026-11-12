@@ -1,0 +1,29 @@
+# Déploiement Render en un clic (New → Blueprint → choisir ce dépôt).
+services:
+  - type: web
+    name: autodeal
+    runtime: docker
+    plan: free            # passer à "starter" pour éviter la mise en veille
+    region: frankfurt
+    healthCheckPath: /sante
+    autoDeploy: true
+    envVars:
+      - key: AUTODEAL_ENV
+        value: production
+      - key: HTTPS_ONLY
+        value: "true"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SETUP_TOKEN
+        sync: false       # à saisir à la création : sert une seule fois pour créer le compte admin
+      - key: DATABASE_URL
+        fromDatabase:
+          name: autodeal-db
+          property: connectionString
+
+databases:
+  - name: autodeal-db
+    plan: free            # la base gratuite expire après 30 jours : passer sur un plan payant pour garder les données
+    region: frankfurt
+    databaseName: autodeal
+    user: autodeal

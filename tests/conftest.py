@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 
@@ -12,7 +13,12 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 @pytest.fixture()
 def database(tmp_path):
-    dbmod.configure(f"sqlite:///{tmp_path / 'test.db'}")
+    url = os.getenv("TEST_DATABASE_URL")  # ex. postgresql+psycopg://… pour tester sur PostgreSQL
+    if url:
+        dbmod.configure(url)
+        dbmod.Base.metadata.drop_all(bind=dbmod.engine)
+    else:
+        dbmod.configure(f"sqlite:///{tmp_path / 'test.db'}")
     dbmod.init_db()
     login_limiter._failures.clear()
     yield dbmod
