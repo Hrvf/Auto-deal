@@ -223,3 +223,16 @@ def test_sync_refused_without_configuration(session):
         raise AssertionError("aurait dû échouer")
     except FeedError:
         pass
+
+
+def test_installable_app(client):
+    page = client.get("/").text
+    assert 'rel="manifest"' in page and "apple-touch-icon" in page and 'class="tabbar"' in page
+    m = client.get("/static/manifest.webmanifest")
+    assert m.status_code == 200 and '"display": "standalone"' in m.text
+    sw = client.get("/sw.js")
+    assert sw.status_code == 200 and sw.headers["service-worker-allowed"] == "/"
+    assert "javascript" in sw.headers["content-type"]
+    assert "manifest-src 'self'" in client.get("/").headers["content-security-policy"]
+    for icon in ("icon-192.png", "icon-512.png", "apple-touch-icon.png"):
+        assert client.get(f"/static/{icon}").status_code == 200

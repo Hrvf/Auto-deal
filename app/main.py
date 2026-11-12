@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import HTTPException, RequestValidationError
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -20,6 +20,7 @@ from .web import LoginRequired, render
 STATIC_DIR = Path(__file__).parent / "static"
 
 CSP = ("default-src 'self'; img-src 'self' https: data:; style-src 'self'; script-src 'self'; "
+       "manifest-src 'self'; worker-src 'self'; connect-src 'self'; "
        "font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'")
 
 
@@ -82,6 +83,12 @@ def create_app() -> FastAPI:
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
     for r in (auth.router, listings.router, imports.router, admin.router, api.router):
         app.include_router(r)
+
+    @app.get("/sw.js", include_in_schema=False)
+    def service_worker():
+        # Servi à la racine pour couvrir tout le site ; jamais mis en cache par le navigateur.
+        return FileResponse(STATIC_DIR / "sw.js", media_type="application/javascript",
+                            headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
 
     @app.get("/sante", include_in_schema=False)
     def health():
