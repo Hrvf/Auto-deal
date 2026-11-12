@@ -61,13 +61,15 @@ TEST_DATABASE_URL=postgresql+psycopg://user@host:5432/db pytest
 
 42 tests couvrent la normalisation, chaque format d'import, l'analyse (fiabilité, réparations, frais, enchère max, note), le parcours web complet et la sécurité (CSRF, limitation de connexion, redirections, droits). Ils couvrent aussi la synchronisation d'un flux autorisé (simulée) et la capture par l'extension (jeton, CORS, pages avec ou sans données structurées).
 
-## Mise en ligne sur Render (recommandé, faisable depuis un téléphone)
+## Mise en ligne gratuite (Render + Neon)
 
-1. Sur render.com, se connecter avec GitHub, puis **New → Blueprint** et choisir le dépôt `Auto-deal`.
-2. Render lit `render.yaml` : un service web + une base PostgreSQL. Saisir une valeur pour `SETUP_TOKEN` (une phrase secrète de votre choix).
-3. Une fois déployé, ouvrir l'adresse `https://….onrender.com`, saisir le `SETUP_TOKEN` et créer le compte administrateur.
+1. **Base de données — Neon** (gratuit, permanent, sans carte) : créer un compte sur neon.tech, créer un projet (région Frankfurt), copier la *connection string* `postgresql://…`.
+2. **Site — Render**, instance Free : New → Web Service → dépôt `Auto-deal` (Docker détecté), instance **Free**, région Frankfurt, puis les variables d'environnement :
+   `AUTODEAL_ENV=production`, `HTTPS_ONLY=true`, `SECRET_KEY` (longue chaîne aléatoire), `SETUP_TOKEN` (phrase secrète), `DATABASE_URL` (la chaîne Neon).
+   Ou, si votre compte Render le permet : New → Blueprint (`render.yaml`).
+3. Ouvrir `https://….onrender.com`, saisir le `SETUP_TOKEN`, créer le compte administrateur.
 
-Plan gratuit : le site se met en veille après une période d'inactivité (premier chargement lent), et la base gratuite expire au bout de 30 jours. Passer sur des plans payants pour un usage durable.
+Limites gratuites : le site se met en veille après 15 min sans visite (≈ 1 min pour se réveiller) ; Neon gratuit = 0,5 Go par projet, largement suffisant pour des milliers d'annonces.
 
 ## Mise en ligne avec Docker (autre hébergeur)
 

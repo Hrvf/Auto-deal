@@ -1,9 +1,9 @@
-# Déploiement Render en un clic (New → Blueprint → choisir ce dépôt).
+# Déploiement Render 100 % gratuit : site sur une instance Free, base PostgreSQL hébergée chez Neon (plan gratuit permanent).
 services:
   - type: web
     name: autodeal
     runtime: docker
-    plan: free            # passer à "starter" pour éviter la mise en veille
+    plan: free            # se met en veille après 15 min sans visite ; "starter" pour l'éviter (payant)
     region: frankfurt
     healthCheckPath: /sante
     autoDeploy: true
@@ -15,15 +15,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: SETUP_TOKEN
-        sync: false       # à saisir à la création : sert une seule fois pour créer le compte admin
+        sync: false       # phrase secrète, sert une seule fois à créer le compte admin
       - key: DATABASE_URL
-        fromDatabase:
-          name: autodeal-db
-          property: connectionString
-
-databases:
-  - name: autodeal-db
-    plan: free            # la base gratuite expire après 30 jours : passer sur un plan payant pour garder les données
-    region: frankfurt
-    databaseName: autodeal
-    user: autodeal
+        sync: false       # coller la « connection string » de Neon (postgresql://…neon.tech/…?sslmode=require)
