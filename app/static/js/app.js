@@ -18,7 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const target = document.getElementById(btn.dataset.toggle);
-      if (target) target.classList.toggle("open");
+      if (!target) return;
+      const shown = getComputedStyle(target).display !== "none";
+      target.classList.remove("auto-open");
+      target.classList.toggle("open", !shown);
     });
   });
 

@@ -123,6 +123,7 @@ fieldset[disabled] input, fieldset[disabled] select { background: #f4f6fa; }
 .filters-main select { width: auto; }
 .filters-more { display: none; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
 .filters-more.open { display: block; }
+@media (min-width: 761px) { .filters-more.auto-open { display: block; } }
 .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 14px; margin: 12px 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips legend { font-weight: 600; font-size: .85rem; color: var(--ink-2); margin-bottom: 6px; }
@@ -299,4 +300,53 @@ input.code { max-width: 420px; }
 @media (display-mode: standalone) {
   body { -webkit-user-select: none; user-select: none; }
   input, textarea, .prewrap, td, dd { -webkit-user-select: text; user-select: text; }
+}
+
+.only-sm { display: none; }
+@media (max-width: 760px) {
+  html, body { overflow-x: hidden; }
+  .only-sm { display: inline; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpi { padding: 12px; }
+  .kpi span { font-size: .68rem; }
+  .kpi strong { font-size: 1.3rem; }
+  .kpi > small { font-size: .72rem; }
+  .topbar-title { font-size: 1.05rem; }
+  .topbar-actions .btn { padding: 6px 10px; font-size: .85rem; }
+  .card { padding: 14px; border-radius: 14px; }
+  /* Tableaux d'annonces -> cartes */
+  .table.cards-list, .table.cards-list tbody { display: block; }
+  .table.cards-list thead { display: none; }
+  .table.cards-list tr { display: grid; grid-template-columns: 58px 1fr 1fr 1fr 28px; gap: 4px 8px; align-items: center;
+    grid-template-areas: "score veh veh veh fav" "score plat plat plat plat" "price resale margin margin margin";
+    padding: 12px 4px; border-bottom: 1px solid var(--line); }
+  .table.cards-list td { display: block; padding: 0; border: 0; text-align: left; }
+  .table.cards-list .c-score { grid-area: score; align-self: start; }
+  .table.cards-list .c-veh { grid-area: veh; }
+  .table.cards-list .c-plat { grid-area: plat; }
+  .table.cards-list .c-plat .sub { display: inline; margin-left: 6px; }
+  .table.cards-list .c-fav { grid-area: fav; align-self: start; }
+  .table.cards-list .c-price { grid-area: price; }
+  .table.cards-list .c-resale { grid-area: resale; }
+  .table.cards-list .c-margin { grid-area: margin; }
+  .table.cards-list .c-km, .table.cards-list .hide-sm { display: none; }
+  .table.cards-list td[data-label]::before { content: attr(data-label); display: block; font-size: .65rem; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+  .table.cards-list .c-margin small { display: block; }
+  .table-card { padding: 0 10px; }
+  .score { min-width: 50px; }
+}
+
+@media (max-width: 760px) {
+  .filters-main { display: grid; grid-template-columns: 1fr auto auto; }
+  .filters-main .grow { grid-column: 1 / -1; min-width: 0; }
+  .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .saved-filters { margin-top: 0; }
+  .save-filter input { width: 140px; }
+}
+@media (max-width: 760px) {
+  .filters-main { grid-template-columns: minmax(0, 1fr) auto; }
+  .filters-main > * { min-width: 0; }
+  .filters-main select { width: 100%; }
+  .filters-main .btn-primary { grid-column: 1 / -1; }
 }

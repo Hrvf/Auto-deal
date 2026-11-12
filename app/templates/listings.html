@@ -3,7 +3,7 @@
 {% block title %}Annonces{% endblock %}
 {% block heading %}Annonces <span class="count">{{ total | num }}</span>{% endblock %}
 {% block actions %}
-<a class="btn btn-ghost" href="/annonces/export.csv?{{ f.to_query(page=1) }}">Exporter CSV</a>
+<a class="btn btn-ghost hide-sm" href="/annonces/export.csv?{{ f.to_query(page=1) }}">Exporter CSV</a>
 <a class="btn btn-primary" href="/annonces/nouvelle">Ajouter</a>
 {% endblock %}
 {% block content %}
@@ -16,7 +16,7 @@
     <button class="btn" type="button" data-toggle="filters-more">Filtres{% if f.active_count() %} <span class="badge">{{ f.active_count() }}</span>{% endif %}</button>
     <button class="btn btn-primary" type="submit">Appliquer</button>
   </div>
-  <div class="filters-more {{ 'open' if f.active_count() }}" id="filters-more">
+  <div class="filters-more {{ 'auto-open' if f.active_count() }}" id="filters-more">
     <fieldset class="chips">
       <legend>Plateformes</legend>
       {% for c in connectors() %}
@@ -62,7 +62,7 @@
 
 {% if rows %}
 <div class="card table-card">
-<table class="table">
+<table class="table cards-list">
   <thead><tr>
     <th>Note</th><th>Véhicule</th><th>Plateforme</th><th class="num">Km</th><th class="num">Prix</th>
     <th class="num">Revente est.</th><th class="num">Marge nette</th><th class="num hide-sm">Enchère max</th><th></th>
@@ -70,17 +70,17 @@
   <tbody>
   {% for l in rows %}{% set a = l.analysis %}
   <tr class="clickable {{ 'row-muted' if l.status == 'ecarte' }}" data-href="/annonces/{{ l.id }}">
-    <td>{{ score_badge(a) }}</td>
-    <td><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a>
-      <div class="sub">{{ l.year or '—' }} · {{ (l.fuel or '—') | capitalize }} · {{ (l.gearbox or '—') | capitalize }}{% if l.department %} · {{ l.department }}{% endif %}
+    <td class="c-score">{{ score_badge(a) }}</td>
+    <td class="c-veh"><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a>
+      <div class="sub">{{ l.year or '—' }}<span class="only-sm"> · {{ l.mileage_km | num }} km</span> · {{ (l.fuel or '—') | capitalize }} · {{ (l.gearbox or '—') | capitalize }}{% if l.department %} · {{ l.department }}{% endif %}
       {% if a and a.reliability_alerts | selectattr('severity', 'equalto', 'eleve') | list %}<span class="tag tag-risk" title="Défaut connu à risque élevé">⚠ fiabilité</span>{% endif %}</div></td>
-    <td>{{ platform_tag(l.platform) }}<div class="sub">{{ PRICE_TYPES[l.price_type] }}</div></td>
-    <td class="num">{{ l.mileage_km | num }}</td>
-    <td class="num strong">{{ l.price | eur }}</td>
-    <td class="num">{{ (a.resale_estimate if a else none) | eur }}</td>
-    <td class="num">{{ margin(a) }}</td>
+    <td class="c-plat">{{ platform_tag(l.platform) }}<div class="sub">{{ PRICE_TYPES[l.price_type] }}</div></td>
+    <td class="num c-km">{{ l.mileage_km | num }}</td>
+    <td class="num strong c-price" data-label="Prix">{{ l.price | eur }}</td>
+    <td class="num c-resale" data-label="Revente">{{ (a.resale_estimate if a else none) | eur }}</td>
+    <td class="num c-margin" data-label="Marge">{{ margin(a) }}</td>
     <td class="num hide-sm">{{ (a.max_bid if a else none) | eur }}</td>
-    <td class="actions">
+    <td class="actions c-fav">
       <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="favori">
         <input type="hidden" name="retour" value="/annonces?{{ f.to_query() }}">

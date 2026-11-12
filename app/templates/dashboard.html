@@ -26,15 +26,15 @@
   <section class="card">
     <div class="card-head"><h2>Meilleures affaires <small class="muted">· marge positive</small></h2><a href="/annonces" class="link">Tout voir →</a></div>
     {% if top %}
-    <table class="table compact">
+    <table class="table compact cards-list">
       <thead><tr><th>Note</th><th>Véhicule</th><th class="num">Prix</th><th class="num">Marge</th></tr></thead>
       <tbody>
       {% for l in top %}
         <tr class="clickable" data-href="/annonces/{{ l.id }}">
-          <td>{{ score_badge(l.analysis) }}</td>
-          <td><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a><div class="sub">{{ platform_tag(l.platform) }} {{ l.year or '' }} · {{ l.mileage_km | num }} km</div></td>
-          <td class="num">{{ l.price | eur }}</td>
-          <td class="num">{{ margin(l.analysis) }}</td>
+          <td class="c-score">{{ score_badge(l.analysis) }}</td>
+          <td class="c-veh"><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a><div class="sub">{{ platform_tag(l.platform) }} {{ l.year or '' }} · {{ l.mileage_km | num }} km</div></td>
+          <td class="num c-price" data-label="Prix">{{ l.price | eur }}</td>
+          <td class="num c-margin" data-label="Marge">{{ margin(l.analysis) }}</td>
         </tr>
       {% endfor %}
       </tbody>
