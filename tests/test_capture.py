@@ -101,3 +101,30 @@ def test_extension_download(client):
     assert manifest["manifest_version"] == 3
     assert set(manifest["permissions"]) == {"activeTab", "scripting", "storage"}
     assert "host_permissions" not in manifest  # aucun accès permanent aux sites
+
+
+def test_capture_from_iphone_shortcut_text_plain(client):
+    """L'app Raccourcis envoie le résultat JavaScript comme un fichier texte, pas en application/json."""
+    import json
+    token = _token(client)
+    html = fixture_bytes("page_lot_sans_donnees.html").decode()
+    body = json.dumps({"url": "https://www.alcopa-auction.fr/lot/DEMO-778", "html": html,
+                       "text": _visible_text(html), "title": "RENAULT CLIO IV 1.5 dCi 90 Energy Business"})
+    r = client.post("/api/capture", content=body.encode(),
+                    headers={"Authorization": f"Bearer {token}", "Content-Type": "text/plain"})
+    assert r.status_code == 200, r.text
+    resume = r.json()["resume"]
+    assert "RENAULT CLIO" in resume and "3 900 €" in resume and "Note provisoire" in resume
+    bad = client.post("/api/capture", content=b"pas du json", headers={"Authorization": f"Bearer {token}"})
+    assert bad.status_code == 422
+
+
+def test_settings_shows_iphone_instructions(client):
+    page = client.get("/parametres").text
+    assert "Exécuter JavaScript sur une page web" in page and "/api/capture" in page
+
+
+def test_render_style_database_url():
+    from app.config import Settings
+    s = Settings(database_url="postgres://u:p@h:5432/db", secret_key="x")
+    assert s.database_url == "postgresql+psycopg://u:p@h:5432/db"

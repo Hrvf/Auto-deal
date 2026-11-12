@@ -277,3 +277,5 @@ details summary { cursor: pointer; }
 .input-md { max-width: 260px; }
 .steps { padding-left: 20px; }
 .steps li { margin-bottom: 6px; }
+.code { font-family: ui-monospace, Menlo, monospace; font-size: .82rem; background: #f7f9fd; margin: 6px 0; }
+input.code { max-width: 420px; }

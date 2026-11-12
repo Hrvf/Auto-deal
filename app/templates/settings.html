@@ -60,6 +60,27 @@
     <input name="name" value="Extension Chrome" maxlength="120" class="input-md">
     <button class="btn btn-primary btn-sm" type="submit">Créer un jeton</button>
   </form>
+  <details class="mt" id="iphone">
+    <summary><b>Sur iPhone : le raccourci « AutoDeal » (bouton Partager de Safari)</b></summary>
+    <p class="muted small">Prérequis : site en ligne en https, et dans Réglages → Apps → Raccourcis → Avancé, activer « Autoriser l'exécution de scripts ».</p>
+    <ol class="steps">
+      <li>App <b>Raccourcis</b> → <b>+</b> → nommez-le « AutoDeal ». Dans ses réglages (ⓘ), activez <b>Afficher dans la feuille de partage</b> et ne gardez que <b>Pages web Safari</b>.</li>
+      <li>Ajoutez l'action <b>Exécuter JavaScript sur une page web</b> et remplacez le code par :
+        <textarea id="ios-js" class="code" rows="8" readonly>var h1 = document.querySelector("h1");
+completion(JSON.stringify({
+  url: location.href,
+  title: (h1 &amp;&amp; h1.innerText.trim()) || document.title,
+  html: document.documentElement.outerHTML,
+  text: document.body ? document.body.innerText : ""
+}));</textarea>
+        <button class="btn btn-sm" type="button" data-copy="ios-js">Copier le code</button></li>
+      <li>Ajoutez <b>Obtenir le contenu de l'URL</b> : URL <input id="ios-url" class="code" readonly value="{{ request_base }}/api/capture"> <button class="btn btn-sm" type="button" data-copy="ios-url">Copier</button><br>
+        Méthode <b>POST</b> · En-têtes : <code>Authorization</code> = <code>Bearer</code> suivi d'un espace et de votre jeton · Corps de la requête : <b>Fichier</b> → <b>Résultat JavaScript</b>.</li>
+      <li>Ajoutez <b>Obtenir la valeur du dictionnaire</b> : clé <code>resume</code>, dans <b>Contenu de l'URL</b>.</li>
+      <li>Ajoutez <b>Afficher le résultat</b> avec <b>Valeur du dictionnaire</b>. (Facultatif : une 2ᵉ valeur <code>lien</code> + <b>Ouvrir les URL</b> pour ouvrir la fiche.)</li>
+    </ol>
+    <p class="muted small">Utilisation : ouvrez l'annonce dans Safari (depuis l'app Leboncoin : Partager → Ouvrir dans Safari), puis Partager → AutoDeal.</p>
+  </details>
   {% if tokens %}
   <table class="table compact mt">
     <thead><tr><th>Nom</th><th>Début du jeton</th><th>Créé le</th><th>Dernière utilisation</th><th></th></tr></thead>

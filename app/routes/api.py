@@ -1,8 +1,10 @@
 """API JSON (lecture) : base pour une future application ou un site public."""
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -87,8 +89,23 @@ class CaptureIn(BaseModel):
     platform: str | None = Field(default=None, max_length=40)
 
 
+MAX_CAPTURE_BODY = 8 * 1024 * 1024
+
+
 @router.post("/capture")
-def capture(payload: CaptureIn, request: Request, db: Session = Depends(get_db), user: User = Depends(token_user)):
+async def capture_endpoint(request: Request, db: Session = Depends(get_db), user: User = Depends(token_user)):
+    """Accepte du JSON quel que soit le Content-Type (l'app Raccourcis d'iPhone envoie parfois du text/plain)."""
+    body = await request.body()
+    if len(body) > MAX_CAPTURE_BODY:
+        raise HTTPException(status_code=413, detail="Page trop volumineuse.")
+    try:
+        payload = CaptureIn.model_validate(json.loads(body.decode("utf-8", errors="replace")))
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Données de capture invalides.") from exc
+    return capture(payload, request, db, user)
+
+
+def capture(payload: CaptureIn, request: Request, db: Session, user: User):
     try:
         job, listing = capture_page(db, url=payload.url, html=payload.html, text=payload.text,
                                     title=payload.title, user_id=user.id, platform=payload.platform)
@@ -99,6 +116,7 @@ def capture(payload: CaptureIn, request: Request, db: Session = Depends(get_db),
     a = listing.analysis
     base = str(request.base_url).rstrip("/")
     return {
+        "resume": _summary(listing, a),
         "id": listing.id,
         "nouveau": job.created_count == 1,
         "plateforme": platform_name(listing.platform),
@@ -116,3 +134,28 @@ def capture(payload: CaptureIn, request: Request, db: Session = Depends(get_db),
         "avertissements": (job.errors or []) + ((a.warnings if a else [])[:2]),
         "lien": f"{base}/annonces/{listing.id}",
     }
+
+
+def _eur(v) -> str:
+    return "—" if v is None else f"{int(v):,} €".replace(",", " ")
+
+
+def _summary(listing: Listing, a) -> str:
+    """Texte court affiché par le Raccourci iPhone."""
+    lines = [listing.title[:80]]
+    if not a:
+        return lines[0]
+    if a.resale_estimate is None:
+        lines.append(f"Note provisoire {a.score}/100 (revente inconnue)")
+    else:
+        lines.append(f"Note {a.score}/100 · {verdict(a.score)[0]}")
+    lines.append(f"Prix {_eur(listing.price)} · Revente {_eur(a.resale_estimate)}")
+    if a.margin is not None:
+        pct = f" ({a.margin_pct * 100:.1f} %)".replace(".", ",") if a.margin_pct is not None else ""
+        lines.append(f"Marge nette {_eur(a.margin)}{pct}")
+    if a.max_bid is not None:
+        lines.append(f"Enchère max conseillée {_eur(a.max_bid)}")
+    risks = [x["title"] for x in a.reliability_alerts if x["severity"] == "eleve"]
+    if risks:
+        lines.append("⚠ " + risks[0])
+    return "\n".join(lines)

@@ -33,6 +33,10 @@ class Settings:
     session_max_age: int = field(default_factory=lambda: int(os.getenv("SESSION_MAX_AGE", str(60 * 60 * 12))))
 
     def __post_init__(self) -> None:
+        # Les hébergeurs (Render, Heroku…) fournissent « postgres:// » : on précise le pilote psycopg.
+        for prefix in ("postgres://", "postgresql://"):
+            if self.database_url.startswith(prefix):
+                self.database_url = "postgresql+psycopg://" + self.database_url[len(prefix):]
         if not self.secret_key:
             if self.env == "production":
                 raise RuntimeError("SECRET_KEY doit être défini en production.")
