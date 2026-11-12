@@ -209,6 +209,8 @@ def capture_page(db: Session, *, url: str, html: str | None, text: str | None, t
         result.errors = [e for e in result.errors if not (e.startswith("Prix") and item.price)]
     for item in result.listings:
         item.url = url
+        # Texte visible conservé pour le diagnostic (réglage des lecteurs sur les vraies pages)
+        item.raw = {**(item.raw or {}), "titre_page": (title or "")[:300], "texte_capture": text[:30_000]}
     job = save_parse_result(db, platform, "capture", result, filename=url[:255], user_id=user_id)
     listing = None
     if result.listings:

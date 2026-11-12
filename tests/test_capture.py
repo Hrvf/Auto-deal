@@ -128,3 +128,13 @@ def test_render_style_database_url():
     from app.config import Settings
     s = Settings(database_url="postgres://u:p@h:5432/db", secret_key="x")
     assert s.database_url == "postgresql+psycopg://u:p@h:5432/db"
+
+
+def test_capture_keeps_text_for_diagnostic(client, session):
+    token = _token(client)
+    html = fixture_bytes("page_lot_sans_donnees.html").decode()
+    r = client.post("/api/capture", headers={"Authorization": f"Bearer {token}"}, json={
+        "url": "https://www.alcopa-auction.fr/lot/DEMO-778", "html": html, "text": _visible_text(html),
+        "title": "RENAULT CLIO IV"})
+    page = client.get(f"/annonces/{r.json()['id']}").text
+    assert "Texte capturé sur la page" in page and "Bilan d&#39;expertise" in page

@@ -144,6 +144,16 @@
       <dt>Analysée le</dt><dd>{{ a.computed_at | date }}</dd>
     </dl>
     {% if l.damages_text %}<h3>Description / défauts déclarés</h3><p class="prewrap">{{ l.damages_text }}</p>{% endif %}
+    {% if l.raw and l.raw.get('texte_capture') %}
+    <details class="mt">
+      <summary><b>Texte capturé sur la page</b> <span class="muted small">(diagnostic)</span></summary>
+      <p class="muted small">Pour améliorer la lecture d'un site, copiez ce texte et envoyez-le au développeur.</p>
+      <textarea id="capture-text" class="code" rows="8" readonly>{{ l.raw.get('titre_page', '') }}
+---
+{{ l.raw.get('texte_capture') }}</textarea>
+      <button class="btn btn-sm" type="button" data-copy="capture-text">Copier le texte</button>
+    </details>
+    {% endif %}
     {% if l.photos %}<div class="photos">{% for p in l.photos[:6] %}<img src="{{ p }}" alt="Photo du véhicule" loading="lazy" referrerpolicy="no-referrer">{% endfor %}</div>{% endif %}
     <div class="row-gap mt">
       <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="reanalyser"><button class="btn btn-sm" type="submit">Recalculer l'analyse</button></form>
