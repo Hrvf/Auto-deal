@@ -1,0 +1,7 @@
+N° de lot;Marque;Modèle;Version;Energie;Boîte;Date de mise en circulation;Kilométrage;Prix de départ;Contrôle technique;Roulant;Frais de remise en état;Date de vente;Lieu de vente;Code postal;Puissance fiscale
+DEMO-A1001;Peugeot;308;1.2 PureTech 130 Allure;Essence;Manuelle;15/03/2018;98 500 km;6 900 €;À refaire;oui;Pare-brise fissuré, rayures porte arrière droite. Frais de remise en état estimés : 650 €;2026-11-20 14:00;Mérignac;33700;6
+DEMO-A1002;Volkswagen;Golf;1.6 TDI 115 Confortline;Diesel;Manuelle;10/06/2017;142 000 km;7 500 €;OK;oui;Choc pare-chocs avant, plaquettes à remplacer;2026-11-20 14:00;Mérignac;33700;5
+DEMO-A1003;Renault;Clio;IV 1.2 TCe 120 EDC Intens;Essence;Automatique;02/04/2014;121 000 km;3 200 €;Contre-visite;non;Non roulant, voyant moteur allumé;2026-11-21 10:00;Mérignac;33700;6
+DEMO-A1004;Toyota;Yaris;100h Dynamic;Hybride;Automatique;20/09/2018;76 000 km;9 800 €;OK;oui;Rayures légères, jante avant gauche abîmée;2026-11-21 10:00;Mérignac;33700;4
+DEMO-A1005;Ford;Fiesta;1.0 EcoBoost 100 Titanium;Essence;Manuelle;11/01/2016;118 000 km;4 100 €;À refaire;oui;Fuite de liquide de refroidissement, embrayage patine;2026-11-22 09:30;Mérignac;33700;5
+DEMO-A1006;Dacia;Sandero;1.0 SCe 75 Stepway;Essence;Manuelle;05/05/2019;54 000 km;5 600 €;OK;oui;Bon état général;2026-11-22 09:30;Mérignac;33700;4

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Imports{% endblock %}
+{% block heading %}Imports{% endblock %}
+{% block actions %}<a class="btn btn-ghost" href="/imports/modele.csv">Télécharger le modèle CSV</a>{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="card">
+    <h2>Importer un fichier</h2>
+    <p class="muted">CSV ou JSON (liste de lots, export), ou page d'annonce enregistrée depuis votre navigateur (Ctrl+S → .html). Les colonnes françaises courantes sont reconnues automatiquement.</p>
+    <form method="post" action="/imports/fichier" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Plateforme d'origine
+        <select name="platform" required>{% for c in connectors() %}<option value="{{ c.key }}" {{ 'selected' if selected == c.key }}>{{ c.name }}</option>{% endfor %}</select>
+      </label>
+      <label class="file-drop"><input type="file" name="fichier" accept=".csv,.tsv,.txt,.json,.html,.htm" required data-filename>
+        <span data-filename-label>Choisir un fichier (CSV, JSON, HTML)</span></label>
+      <label>Lien de l'annonce <small class="muted">(facultatif, pour une page .html)</small><input type="url" name="url" placeholder="https://"></label>
+      <button class="btn btn-primary" type="submit">Importer et analyser</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Coller le texte d'une annonce</h2>
+    <p class="muted">Copiez le contenu d'une fiche (titre en première ligne, puis caractéristiques et défauts). Kilométrage, prix, année, énergie et boîte sont extraits automatiquement ; vous pourrez corriger ensuite.</p>
+    <form method="post" action="/imports/texte" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Plateforme
+        <select name="platform" required>{% for c in connectors() %}<option value="{{ c.key }}" {{ 'selected' if selected == c.key }}>{{ c.name }}</option>{% endfor %}</select>
+      </label>
+      <label>Texte de l'annonce<textarea name="texte" rows="8" required maxlength="20000" placeholder="Peugeot 308 1.2 PureTech 130 Allure&#10;Mise en circulation : 03/2018&#10;98 500 km · Essence · Manuelle&#10;Mise à prix : 7 900 €&#10;Défauts : pare-brise fissuré, rayures"></textarea></label>
+      <label>Lien de l'annonce<input type="url" name="url" placeholder="https://"></label>
+      <button class="btn btn-primary" type="submit">Analyser ce texte</button>
+    </form>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Historique des imports</h2>
+  {% if jobs %}
+  <table class="table compact">
+    <thead><tr><th>Date</th><th>Plateforme</th><th>Source</th><th>Fichier</th><th class="num">Ajoutées</th><th class="num">Mises à jour</th><th class="num">Ignorées</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for j in jobs %}
+      <tr><td>{{ j.created_at | date }}</td><td>{{ j.platform | platform }}</td><td>{{ j.source }}</td><td class="trunc">{{ j.filename or '—' }}</td>
+        <td class="num">{{ j.created_count }}</td><td class="num">{{ j.updated_count }}</td><td class="num">{{ j.skipped_count }}</td>
+        <td><span class="pill pill-{{ j.status }}">{{ {'ok': 'Réussi', 'partiel': 'Partiel', 'echec': 'Échec'}[j.status] }}</span>
+        {% if j.errors %}<details><summary>{{ j.errors | length }} message(s)</summary><ul class="small">{% for e in j.errors[:20] %}<li>{{ e }}</li>{% endfor %}</ul></details>{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="muted">Aucun import pour le moment.</p>{% endif %}
+</section>
+{% endblock %}

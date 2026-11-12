@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Installation{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+{% block public %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand"><span class="brand-mark">AD</span><div><strong>Bienvenue sur AutoDeal</strong><small>Création du compte administrateur</small></div></div>
+    {% include "partials/flashes.html" %}
+    <p class="muted">Ce compte aura accès à toutes les fonctions. Le site reste privé : seules les personnes que vous créerez pourront s'y connecter.</p>
+    <form method="post" action="/installation" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Nom affiché<input type="text" name="display_name" maxlength="120"></label>
+      <label>Adresse e-mail<input type="email" name="email" value="{{ email or '' }}" required></label>
+      <label>Mot de passe <small class="muted">(10 caractères minimum)</small><input type="password" name="password" minlength="10" required autocomplete="new-password"></label>
+      <label>Confirmation<input type="password" name="password2" minlength="10" required autocomplete="new-password"></label>
+      {% if needs_token %}<label>Jeton d'installation<input type="password" name="setup_token" required></label>{% endif %}
+      <button class="btn btn-primary btn-block" type="submit">Créer le compte</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

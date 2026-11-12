@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Connecteurs{% endblock %}
+{% block heading %}Connecteurs{% endblock %}
+{% block content %}
+<section class="card intro">
+  <p>Chaque plateforme a son propre connecteur. <b>Aucun site n'est interrogé sans autorisation</b> : les statuts ci-dessous reflètent les vérifications faites le 12/11/2026 (robots.txt, protections anti-robot, absence d'API publique).</p>
+  <div class="legend">
+    <span class="status status-auto">Automatique : {{ summary.auto }}</span>
+    <span class="status status-autorisation">Autorisation requise : {{ summary.autorisation }}</span>
+    <span class="status status-manuel">Import manuel : {{ summary.manuel }}</span>
+  </div>
+  <p class="muted small">Un connecteur passe en « Automatique » dès qu'un flux autorisé (export ou API fourni par la plateforme) est configuré et activé. La synchronisation peut ensuite être planifiée avec <code>python -m app.cli synchroniser</code>.</p>
+</section>
+
+<div class="connectors">
+{% for it in items %}{% set c = it.c %}{% set cfg = it.cfg %}
+  <article class="card connector">
+    <header>
+      <div><h2>{{ c.name }}</h2>{% if c.website %}<a href="{{ c.website }}" target="_blank" rel="noopener noreferrer" class="muted small">{{ c.website | replace('https://', '') }}</a>{% endif %}</div>
+      <span class="status status-{{ it.status }}">{{ it.status_label }}</span>
+    </header>
+    <p>{{ c.status_reason }}</p>
+    <dl class="dl small">
+      <dt>Type</dt><dd>{{ 'Enchères' if c.kind == 'enchere' else 'Petites annonces' }}{% if c.is_retail_reference %} · sert de référence de prix{% endif %}</dd>
+      <dt>Véhicules en base</dt><dd>{{ it.count }}</dd>
+      <dt>Import manuel</dt><dd>{{ c.how_to_export }}</dd>
+      {% if c.how_to_authorize %}<dt>Automatiser</dt><dd>{{ c.how_to_authorize }}</dd>{% endif %}
+      {% if cfg and cfg.last_sync_at %}<dt>Dernière synchro</dt><dd>{{ cfg.last_sync_at | date }} — {{ cfg.last_sync_status }}</dd>{% endif %}
+    </dl>
+    <div class="row-gap">
+      <a class="btn btn-sm" href="/imports?plateforme={{ c.key }}">Importer</a>
+      <a class="btn btn-sm btn-ghost" href="/annonces?plateforme={{ c.key }}">Voir les annonces</a>
+      {% if cfg and cfg.feed_enabled %}
+      <form method="post" action="/connecteurs/{{ c.key }}/synchroniser" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-primary" type="submit">Synchroniser maintenant</button></form>
+      {% endif %}
+    </div>
+    {% if user.is_admin and c.key != 'manuel' %}
+    <details class="feed-config" {{ 'open' if cfg and cfg.feed_url }}>
+      <summary>Flux autorisé (export / API fourni par la plateforme)</summary>
+      <form method="post" action="/connecteurs/{{ c.key }}/flux" class="form form-grid">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="span-2">URL du flux (https)<input type="url" name="feed_url" value="{{ cfg.feed_url or '' if cfg else '' }}" placeholder="https://…/export.csv"></label>
+        <label>Format<select name="feed_format"><option value="csv" {{ 'selected' if cfg and cfg.feed_format == 'csv' }}>CSV</option><option value="json" {{ 'selected' if cfg and cfg.feed_format == 'json' }}>JSON</option></select></label>
+        <label>En-tête d'authentification<input name="auth_header_name" value="{{ cfg.auth_header_name or '' if cfg else '' }}" placeholder="Authorization"></label>
+        <label class="span-2">Valeur secrète <small class="muted">{{ '(déjà enregistrée — laisser vide pour la conserver)' if cfg and cfg.auth_header_value else '' }}</small><input type="password" name="auth_header_value" autocomplete="off"></label>
+        <label class="span-2">Autorisation obtenue <small class="muted">(obligatoire pour activer)</small><textarea name="authorization_note" rows="2" placeholder="Ex. : accès API accordé par … le …, conditions …">{{ cfg.authorization_note or '' if cfg else '' }}</textarea></label>
+        <label class="check span-2"><input type="checkbox" name="feed_enabled" {{ 'checked' if cfg and cfg.feed_enabled }}> Activer la synchronisation automatique</label>
+        <div class="span-2"><button class="btn btn-sm" type="submit">Enregistrer</button></div>
+      </form>
+    </details>
+    {% endif %}
+  </article>
+{% endfor %}
+</div>
+{% endblock %}

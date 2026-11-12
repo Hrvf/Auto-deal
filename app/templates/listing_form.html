@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set l = listing %}
+{% set editing = l is not none and l.id %}
+{% block title %}{{ 'Modifier' if editing else 'Ajouter un véhicule' }}{% endblock %}
+{% block heading %}{% if editing %}<a href="/annonces/{{ l.id }}" class="back">← Retour à la fiche</a>{% else %}Ajouter un véhicule{% endif %}{% endblock %}
+{% block content %}
+<form method="post" action="{{ '/annonces/' ~ l.id ~ '/modifier' if editing else '/annonces/nouvelle' }}" class="form card form-grid">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if not editing %}
+  <label>Plateforme<select name="platform">{% for c in connectors_list %}<option value="{{ c.key }}" {{ 'selected' if (l and l.platform == c.key) or (not l and c.key == 'manuel') }}>{{ c.name }}</option>{% endfor %}</select></label>
+  <label>Référence (n° de lot / d'annonce)<input name="external_id" maxlength="120"></label>
+  {% endif %}
+  <label class="span-2">Titre<input name="title" value="{{ l.title if l else '' }}" maxlength="300" placeholder="Peugeot 308 1.2 PureTech 130 Allure"></label>
+  <label>Marque<input name="make" value="{{ l.make or '' if l else '' }}" required></label>
+  <label>Modèle<input name="model" value="{{ l.model or '' if l else '' }}" required></label>
+  <label class="span-2">Version / motorisation<input name="version" value="{{ l.version or '' if l else '' }}" placeholder="1.2 PureTech 130 EAT8 — précisez le moteur pour l'analyse de fiabilité"></label>
+  <label>Énergie<select name="fuel"><option value="">—</option>{% for x in fuels %}<option value="{{ x }}" {{ 'selected' if l and l.fuel == x }}>{{ x | capitalize }}</option>{% endfor %}</select></label>
+  <label>Boîte<select name="gearbox"><option value="">—</option><option value="manuelle" {{ 'selected' if l and l.gearbox == 'manuelle' }}>Manuelle</option><option value="automatique" {{ 'selected' if l and l.gearbox == 'automatique' }}>Automatique</option></select></label>
+  <label>Mise en circulation<input type="date" name="first_registration" value="{{ l.first_registration or '' if l else '' }}"></label>
+  <label>Année<input name="year" inputmode="numeric" value="{{ l.year or '' if l else '' }}"></label>
+  <label>Kilométrage<input name="mileage_km" inputmode="numeric" value="{{ l.mileage_km or '' if l else '' }}"></label>
+  <label>Puissance fiscale (CV)<input name="fiscal_hp" inputmode="numeric" value="{{ l.fiscal_hp or '' if l else '' }}"></label>
+  <label>Puissance (ch)<input name="power_hp" inputmode="numeric" value="{{ l.power_hp or '' if l else '' }}"></label>
+  <label>Prix (€)<input name="price" inputmode="numeric" value="{{ l.price or '' if l else '' }}"></label>
+  <label>Type de prix<select name="price_type">{% for k, v in PRICE_TYPES.items() %}<option value="{{ k }}" {{ 'selected' if l and l.price_type == k }}>{{ v }}</option>{% endfor %}</select></label>
+  <label class="check"><input type="checkbox" name="price_includes_fees" {{ 'checked' if l and l.price_includes_fees }}> Le prix inclut déjà les frais acheteur</label>
+  <label>Cote / prix du marché (€)<input name="market_price_manual" inputmode="numeric" value="{{ l.market_price_manual or '' if l else '' }}" placeholder="optionnel"></label>
+  <label>Ville<input name="location" value="{{ l.location or '' if l else '' }}"></label>
+  <label>Département<input name="department" maxlength="3" value="{{ l.department or '' if l else '' }}"></label>
+  <label>Contrôle technique<select name="ct_status">{% for k, v in CT_LABELS.items() %}<option value="{{ k }}" {{ 'selected' if (l and l.ct_status == k) or (not l and k == 'inconnu') }}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Roulant<select name="is_running"><option value="">Inconnu</option><option value="oui" {{ 'selected' if l and l.is_running == true }}>Oui</option><option value="non" {{ 'selected' if l and l.is_running == false }}>Non</option></select></label>
+  <label>Historique d'entretien<select name="maintenance_history"><option value="">Inconnu</option><option value="oui" {{ 'selected' if l and l.maintenance_history == true }}>Fourni</option><option value="non" {{ 'selected' if l and l.maintenance_history == false }}>Absent</option></select></label>
+  <label>Fin de l'enchère<input type="datetime-local" name="auction_end" value="{{ l.auction_end.strftime('%Y-%m-%dT%H:%M') if l and l.auction_end else '' }}"></label>
+  <label class="span-2">Lien de l'annonce<input type="url" name="url" value="{{ l.url or '' if l else '' }}" placeholder="https://"></label>
+  <label class="span-2">Défauts déclarés / bilan d'expertise / description
+    <textarea name="damages_text" rows="6" maxlength="5000" placeholder="Ex. : pare-brise fissuré, embrayage patine, voyant moteur. Frais de remise en état estimés : 850 €">{{ l.damages_text or '' if l else '' }}</textarea></label>
+  <div class="span-2 row-gap"><button class="btn btn-primary" type="submit">{{ 'Enregistrer et réanalyser' if editing else 'Ajouter et analyser' }}</button>
+    <a class="btn btn-ghost" href="{{ '/annonces/' ~ l.id if editing else '/annonces' }}">Annuler</a></div>
+</form>
+{% endblock %}

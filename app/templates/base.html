@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}AutoDeal Comparator{% endblock %} · AutoDeal</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% if user %}
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark">AD</span>
+      <span class="brand-text">AutoDeal<small>Comparator</small></span>
+    </a>
+    <nav class="nav">
+      <a href="/" class="{{ 'active' if path == '/' }}"><span class="ico">◧</span>Tableau de bord</a>
+      <a href="/annonces" class="{{ 'active' if path.startswith('/annonces') and path != '/annonces/nouvelle' }}"><span class="ico">≡</span>Annonces</a>
+      <a href="/annonces/nouvelle" class="{{ 'active' if path == '/annonces/nouvelle' }}"><span class="ico">＋</span>Ajouter un véhicule</a>
+      <a href="/imports" class="{{ 'active' if path.startswith('/imports') }}"><span class="ico">⇪</span>Imports</a>
+      <a href="/connecteurs" class="{{ 'active' if path.startswith('/connecteurs') }}"><span class="ico">⇄</span>Connecteurs</a>
+      <a href="/parametres" class="{{ 'active' if path.startswith('/parametres') }}"><span class="ico">⚙</span>Paramètres</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="who">{{ user.display_name or user.email }}<small>{{ 'Administrateur' if user.is_admin else 'Membre' }}</small></div>
+      <form method="post" action="/deconnexion">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-ghost btn-sm" type="submit">Se déconnecter</button>
+      </form>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-toggle" type="button" data-toggle="sidebar" aria-label="Menu">☰</button>
+      <div class="topbar-title">{% block heading %}{% endblock %}</div>
+      <div class="topbar-actions">{% block actions %}{% endblock %}</div>
+    </header>
+    <div class="content">
+      {% include "partials/flashes.html" %}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+{% else %}
+  {% block public %}{% endblock %}
+{% endif %}
+</body>
+</html>

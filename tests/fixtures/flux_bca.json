@@ -1,0 +1,4 @@
+{"items":[
+ {"id":"DEMO-BCA-1","make":"Volkswagen","model":"Golf","version":"1.6 TDI 115 Confortline","fuel":"Diesel","gearbox":"Manuelle","first_registration":"2016-02-01","mileage":131000,"price":6800,"location":{"city":"Lormont","zipcode":"33310"},"damages":"Rayures, pneus à remplacer"},
+ {"id":"DEMO-BCA-2","make":"Peugeot","model":"308","version":"1.2 PureTech 130 Allure","fuel":"Essence","gearbox":"Manuelle","first_registration":"2019-01-15","mileage":82000,"price":7900,"damages":"Bon état"}
+]}

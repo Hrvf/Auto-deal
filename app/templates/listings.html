@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import score_badge, platform_tag, margin %}
+{% block title %}Annonces{% endblock %}
+{% block heading %}Annonces <span class="count">{{ total | num }}</span>{% endblock %}
+{% block actions %}
+<a class="btn btn-ghost" href="/annonces/export.csv?{{ f.to_query(page=1) }}">Exporter CSV</a>
+<a class="btn btn-primary" href="/annonces/nouvelle">Ajouter</a>
+{% endblock %}
+{% block content %}
+<form class="filters card" method="get" action="/annonces" id="filters">
+  <div class="filters-main">
+    <input type="search" name="q" value="{{ f.q }}" placeholder="Rechercher : marque, modèle, version…" class="grow">
+    <select name="tri" data-autosubmit aria-label="Tri">
+      {% for k, s in sorts.items() %}<option value="{{ k }}" {{ 'selected' if f.sort == k }}>{{ s[0] }}</option>{% endfor %}
+    </select>
+    <button class="btn" type="button" data-toggle="filters-more">Filtres{% if f.active_count() %} <span class="badge">{{ f.active_count() }}</span>{% endif %}</button>
+    <button class="btn btn-primary" type="submit">Appliquer</button>
+  </div>
+  <div class="filters-more {{ 'open' if f.active_count() }}" id="filters-more">
+    <fieldset class="chips">
+      <legend>Plateformes</legend>
+      {% for c in connectors() %}
+      <label class="chip"><input type="checkbox" name="plateforme" value="{{ c.key }}" {{ 'checked' if c.key in f.platforms }}><span>{{ c.name }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <div class="filter-grid">
+      <label>Marque<select name="marque"><option value="">Toutes</option>{% for m in makes %}<option {{ 'selected' if f.make == m }}>{{ m }}</option>{% endfor %}</select></label>
+      <label>Modèle<input name="modele" value="{{ f.model }}"></label>
+      <label>Énergie<select name="energie"><option value="">Toutes</option>{% for x in fuels %}<option value="{{ x }}" {{ 'selected' if f.fuel == x }}>{{ x | capitalize }}</option>{% endfor %}</select></label>
+      <label>Boîte<select name="boite"><option value="">Toutes</option><option value="manuelle" {{ 'selected' if f.gearbox == 'manuelle' }}>Manuelle</option><option value="automatique" {{ 'selected' if f.gearbox == 'automatique' }}>Automatique</option></select></label>
+      <label>Prix min (€)<input name="prix_min" inputmode="numeric" value="{{ f.price_min or '' }}"></label>
+      <label>Prix max (€)<input name="prix_max" inputmode="numeric" value="{{ f.price_max or '' }}"></label>
+      <label>Année min<input name="annee_min" inputmode="numeric" value="{{ f.year_min or '' }}"></label>
+      <label>Année max<input name="annee_max" inputmode="numeric" value="{{ f.year_max or '' }}"></label>
+      <label>Km max<input name="km_max" inputmode="numeric" value="{{ f.km_max or '' }}"></label>
+      <label>Note min /100<input name="note_min" inputmode="numeric" value="{{ f.score_min or '' }}"></label>
+      <label>Marge min (€)<input name="marge_min" inputmode="numeric" value="{{ f.margin_min or '' }}"></label>
+      <label>Département<input name="dep" maxlength="3" value="{{ f.department }}" placeholder="33"></label>
+      <label>Statut<select name="statut"><option value="">Actifs</option>{% for k, v in STATUS_LABELS.items() %}<option value="{{ k }}" {{ 'selected' if f.status == k }}>{{ v }}</option>{% endfor %}</select></label>
+      <label class="check"><input type="checkbox" name="favoris" value="1" {{ 'checked' if f.favorite }}> Favoris uniquement</label>
+      <label class="check"><input type="checkbox" name="ecartes" value="1" {{ 'checked' if f.include_ecarte }}> Inclure les écartés</label>
+    </div>
+    <div class="row-gap"><a class="btn btn-ghost btn-sm" href="/annonces">Réinitialiser</a></div>
+  </div>
+</form>
+
+<div class="saved-filters">
+  {% for s in saved %}
+  <span class="saved"><a href="/annonces?{{ s.query }}">{{ s.name }}</a>
+    <form method="post" action="/filtres/{{ s.id }}/supprimer" class="inline" data-confirm="Supprimer ce filtre ?"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit" class="x" aria-label="Supprimer">×</button></form>
+  </span>
+  {% endfor %}
+  {% if f.active_count() %}
+  <form method="post" action="/filtres" class="inline save-filter">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="query" value="{{ f.to_query(page=1) }}">
+    <input name="name" placeholder="Nom du filtre" required maxlength="120">
+    <button class="btn btn-sm" type="submit">Enregistrer ce filtre</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if rows %}
+<div class="card table-card">
+<table class="table">
+  <thead><tr>
+    <th>Note</th><th>Véhicule</th><th>Plateforme</th><th class="num">Km</th><th class="num">Prix</th>
+    <th class="num">Revente est.</th><th class="num">Marge nette</th><th class="num hide-sm">Enchère max</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for l in rows %}{% set a = l.analysis %}
+  <tr class="clickable {{ 'row-muted' if l.status == 'ecarte' }}" data-href="/annonces/{{ l.id }}">
+    <td>{{ score_badge(a) }}</td>
+    <td><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a>
+      <div class="sub">{{ l.year or '—' }} · {{ (l.fuel or '—') | capitalize }} · {{ (l.gearbox or '—') | capitalize }}{% if l.department %} · {{ l.department }}{% endif %}
+      {% if a and a.reliability_alerts | selectattr('severity', 'equalto', 'eleve') | list %}<span class="tag tag-risk" title="Défaut connu à risque élevé">⚠ fiabilité</span>{% endif %}</div></td>
+    <td>{{ platform_tag(l.platform) }}<div class="sub">{{ PRICE_TYPES[l.price_type] }}</div></td>
+    <td class="num">{{ l.mileage_km | num }}</td>
+    <td class="num strong">{{ l.price | eur }}</td>
+    <td class="num">{{ (a.resale_estimate if a else none) | eur }}</td>
+    <td class="num">{{ margin(a) }}</td>
+    <td class="num hide-sm">{{ (a.max_bid if a else none) | eur }}</td>
+    <td class="actions">
+      <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="favori">
+        <input type="hidden" name="retour" value="/annonces?{{ f.to_query() }}">
+        <button class="star {{ 'on' if l.favorite }}" type="submit" title="Favori" aria-label="Favori">★</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% if pages > 1 %}
+<nav class="pager">
+  {% if f.page > 1 %}<a class="btn btn-sm" href="/annonces?{{ f.to_query(page=f.page - 1) }}">← Précédent</a>{% endif %}
+  <span>Page {{ f.page }} / {{ pages }}</span>
+  {% if f.page < pages %}<a class="btn btn-sm" href="/annonces?{{ f.to_query(page=f.page + 1) }}">Suivant →</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+<div class="card empty"><p>Aucune annonce ne correspond à ces critères.</p><a class="btn" href="/imports">Importer des annonces</a></div>
+{% endif %}
+{% endblock %}

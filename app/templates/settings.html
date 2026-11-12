@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Paramètres{% endblock %}
+{% block heading %}Paramètres{% endblock %}
+{% block content %}
+{% set g = cfg.general %}
+<form method="post" action="/parametres/analyse" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <fieldset {{ 'disabled' if not user.is_admin }}>
+  <h2>Calcul de la rentabilité</h2>
+  <div class="form-grid cols-3">
+    <label>Tarif carte grise (€/CV)<input name="carte_grise_cv_rate" value="{{ g.carte_grise_cv_rate }}"><small class="muted">Nouvelle-Aquitaine : 58 € depuis le 01/03/2026</small></label>
+    <label>Taxes fixes carte grise (€)<input name="carte_grise_fixed" value="{{ g.carte_grise_fixed }}"><small class="muted">11 € + 2,76 € d'acheminement</small></label>
+    <label>Puissance fiscale par défaut (CV)<input name="default_fiscal_hp" value="{{ g.default_fiscal_hp }}"></label>
+    <label>Transport véhicule d'enchère (€)<input name="transport_auction" value="{{ g.transport_auction }}"></label>
+    <label>Transport achat sur annonce (€)<input name="transport_listing" value="{{ g.transport_listing }}"></label>
+    <label>Contrôle technique (€)<input name="ct_cost" value="{{ g.ct_cost }}"></label>
+    <label>Préparation esthétique (€)<input name="preparation_cost" value="{{ g.preparation_cost }}"></label>
+    <label>Frais de revente (€)<input name="sale_costs" value="{{ g.sale_costs }}"></label>
+    <label>Taux horaire main-d'œuvre (€)<input name="labor_rate" value="{{ g.labor_rate }}"></label>
+    <label>Provision aléas (% du prix)<input name="contingency_pct" value="{{ (g.contingency_pct * 100) | round(1) }}"></label>
+    <label>Négociation à la revente (%)<input name="resale_negotiation_pct" value="{{ (g.resale_negotiation_pct * 100) | round(1) }}"><small class="muted">écart prix affiché → prix obtenu</small></label>
+    <label>Marge visée (%)<input name="target_margin_pct" value="{{ (g.target_margin_pct * 100) | round(1) }}"><small class="muted">sert à l'enchère maximale conseillée</small></label>
+    <label>Régime fiscal à la revente
+      <select name="vat_regime"><option value="particulier" {{ 'selected' if g.vat_regime == 'particulier' }}>Particulier (pas de TVA)</option><option value="marge" {{ 'selected' if g.vat_regime == 'marge' }}>Marchand : TVA sur la marge (20 %)</option></select></label>
+  </div>
+
+  <h2 class="mt">Frais acheteur par plateforme</h2>
+  <p class="muted small">Valeurs indicatives : les frais varient selon les ventes. Vérifiez les conditions de chaque vacation et ajustez.</p>
+  <table class="table compact">
+    <thead><tr><th>Plateforme</th><th>Frais (%)</th><th>Frais fixes (€)</th><th>Source / remarque</th></tr></thead>
+    <tbody>
+    {% for c in connectors_list %}{% set fee = cfg.fee_for(c.key) %}
+      <tr><td>{{ c.name }}</td>
+        <td><input class="input-sm" name="fee_pct_{{ c.key }}" value="{{ (fee.pct * 100) | round(2) }}"></td>
+        <td><input class="input-sm" name="fee_fixed_{{ c.key }}" value="{{ fee.fixed }}"></td>
+        <td class="small muted">{{ c.default_fees.note }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if user.is_admin %}<button class="btn btn-primary mt" type="submit">Enregistrer et réanalyser tout</button>{% else %}<p class="muted">Seul un administrateur peut modifier ces paramètres.</p>{% endif %}
+  </fieldset>
+</form>
+
+<div class="grid-2">
+  <section class="card" id="compte">
+    <h2>Mon mot de passe</h2>
+    <form method="post" action="/parametres/mot-de-passe" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Mot de passe actuel<input type="password" name="current" required autocomplete="current-password"></label>
+      <label>Nouveau mot de passe<input type="password" name="new" minlength="10" required autocomplete="new-password"></label>
+      <label>Confirmation<input type="password" name="new2" minlength="10" required autocomplete="new-password"></label>
+      <button class="btn" type="submit">Modifier</button>
+    </form>
+  </section>
+  {% if user.is_admin %}
+  <section class="card" id="utilisateurs">
+    <h2>Utilisateurs</h2>
+    <table class="table compact">
+      <tbody>
+      {% for u in users %}
+        <tr><td>{{ u.display_name or u.email }}<div class="sub">{{ u.email }} · {{ 'Admin' if u.is_admin else 'Membre' }}{% if not u.is_active %} · désactivé{% endif %}</div></td>
+          <td class="num">{% if u.id != user.id %}<form method="post" action="/parametres/utilisateurs/{{ u.id }}/activer" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-ghost" type="submit">{{ 'Désactiver' if u.is_active else 'Réactiver' }}</button></form>{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <form method="post" action="/parametres/utilisateurs" class="form mt">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <h3>Inviter une personne</h3>
+      <label>E-mail<input type="email" name="email" required></label>
+      <label>Nom<input name="display_name"></label>
+      <label>Mot de passe provisoire<input type="password" name="password" minlength="10" required autocomplete="new-password"></label>
+      <label>Rôle<select name="role"><option value="membre">Membre</option><option value="admin">Administrateur</option></select></label>
+      <button class="btn" type="submit">Créer le compte</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

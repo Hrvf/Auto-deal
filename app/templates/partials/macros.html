@@ -1,0 +1,20 @@
+{% macro score_badge(a, size='') -%}
+{% if a %}{% set v = verdict(a.score) %}
+<span class="score score-{{ v[1] }} {{ size }}" title="{{ v[0] }}"><b>{{ a.score }}</b><small>/100</small></span>
+{%- else %}<span class="score score-none {{ size }}"><b>–</b></span>{% endif %}
+{%- endmacro %}
+
+{% macro platform_tag(key) -%}
+<span class="tag tag-{{ key }}">{{ key | platform }}</span>
+{%- endmacro %}
+
+{% macro margin(a) -%}
+{% if a and a.margin is not none %}
+<span class="{{ 'pos' if a.margin > 0 else 'neg' }}">{{ a.margin | eur }}</span>
+<small class="muted">{{ a.margin_pct | pct }}</small>
+{%- else %}<span class="muted" title="Revente non estimable">—</span>{% endif %}
+{%- endmacro %}
+
+{% macro status_pill(status, label) -%}
+<span class="pill pill-{{ status }}">{{ label }}</span>
+{%- endmacro %}

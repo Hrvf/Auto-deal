@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Erreur {{ code }}{% endblock %}
+{% block heading %}Erreur {{ code }}{% endblock %}
+{% block content %}
+<div class="card empty"><p>{{ detail }}</p><a class="btn" href="/">Retour au tableau de bord</a></div>
+{% endblock %}
+{% block public %}
+<div class="auth-wrap"><div class="auth-card"><h2>Erreur {{ code }}</h2><p>{{ detail }}</p><a class="btn" href="/connexion">Connexion</a></div></div>
+{% endblock %}

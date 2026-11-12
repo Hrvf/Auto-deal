@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import score_badge, platform_tag %}
+{% block title %}{{ l.title }}{% endblock %}
+{% block heading %}<a href="/annonces" class="back">← Annonces</a>{% endblock %}
+{% block actions %}
+{% if l.url %}<a class="btn btn-ghost" href="{{ l.url }}" target="_blank" rel="noopener noreferrer">Voir l'annonce ↗</a>{% endif %}
+<a class="btn" href="/annonces/{{ l.id }}/modifier">Modifier</a>
+{% endblock %}
+{% block content %}
+{% set v = verdict(a.score) %}
+<section class="detail-head card">
+  <div class="detail-title">
+    <div class="row-gap">{{ platform_tag(l.platform) }}<span class="pill pill-{{ l.status }}">{{ STATUS_LABELS[l.status] }}</span>{% if l.favorite %}<span class="pill pill-fav">★ Favori</span>{% endif %}</div>
+    <h1>{{ l.title }}</h1>
+    <p class="specs">
+      <span>{{ l.year or 'Année ?' }}</span><span>{{ l.mileage_km | num }} km</span>
+      <span>{{ (l.fuel or 'énergie ?') | capitalize }}</span><span>{{ (l.gearbox or 'boîte ?') | capitalize }}</span>
+      {% if l.fiscal_hp %}<span>{{ l.fiscal_hp }} CV</span>{% endif %}{% if l.power_hp %}<span>{{ l.power_hp }} ch</span>{% endif %}
+      {% if l.location or l.department %}<span>{{ l.location or '' }}{% if l.department %} ({{ l.department }}){% endif %}</span>{% endif %}
+      <span>CT : {{ CT_LABELS[l.ct_status] }}</span>
+      {% if l.is_running is not none %}<span>{{ 'Roulant' if l.is_running else 'Non roulant' }}</span>{% endif %}
+    </p>
+    {% if l.auction_end %}<p class="muted">Fin de vente : <b>{{ l.auction_end | date }}</b></p>{% endif %}
+  </div>
+  <div class="detail-score">
+    {{ score_badge(a, 'score-xl') }}
+    <div class="verdict verdict-{{ v[1] }}">{{ v[0] }}</div>
+  </div>
+</section>
+
+<section class="kpis">
+  <div class="kpi"><span>{{ PRICE_TYPES[l.price_type] }}</span><strong>{{ l.price | eur }}</strong><small>{{ 'frais inclus' if l.price_includes_fees else ('+ ' ~ (a.purchase_fees | eur) ~ ' de frais' if a.purchase_fees else 'sans frais de plateforme') }}</small></div>
+  <div class="kpi"><span>Revente estimée</span><strong>{{ a.resale_estimate | eur }}</strong><small>{% if a.resale_low %}{{ a.resale_low | eur }} – {{ a.resale_high | eur }} · {% endif %}confiance {{ a.resale_confidence }}</small></div>
+  <div class="kpi"><span>Coût de revient</span><strong>{{ a.total_cost | eur }}</strong><small>réparations {{ a.repairs_low | eur }} – {{ a.repairs_high | eur }}</small></div>
+  <div class="kpi kpi-accent"><span>Marge nette</span><strong class="{{ 'pos' if (a.margin or 0) > 0 else 'neg' }}">{{ a.margin | eur }}</strong><small>{{ a.margin_pct | pct }} du coût de revient</small></div>
+  {% if a.max_bid is not none %}<div class="kpi"><span>Enchère maximale conseillée</span><strong>{{ a.max_bid | eur }}</strong><small>hors frais, pour viser la marge cible</small></div>{% endif %}
+</section>
+
+{% if a.warnings %}
+<div class="notice">{% for w in a.warnings %}<p>⚠ {{ w }}</p>{% endfor %}</div>
+{% endif %}
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Détail de la note</h2>
+    <ul class="breakdown">
+    {% for key, p in a.score_breakdown.items() if not key.startswith('_') %}
+      <li><div class="bd-label"><span>{{ p.label }}</span><b>{{ p.points }} / {{ p.max }}</b></div>
+        <span class="bar"><i data-width="{{ ((p.points / p.max) * 100) | round | int }}"></i></span>
+        {% if p.note %}<small class="muted">{{ p.note }}</small>{% endif %}</li>
+    {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Coût de revient et marge</h2>
+    <table class="table compact">
+      <tbody>
+      {% for c in a.costs_breakdown %}<tr><td>{{ c.label }}{% if c.note %}<div class="sub">{{ c.note }}</div>{% endif %}</td><td class="num">{{ c.amount | eur }}</td></tr>{% endfor %}
+      <tr class="total"><td>Coût de revient total</td><td class="num">{{ a.total_cost | eur }}</td></tr>
+      <tr><td>Prix de revente estimé</td><td class="num">{{ a.resale_estimate | eur }}</td></tr>
+      {% for e in a.score_breakdown.get('_extra', []) %}<tr><td>{{ e.label }}</td><td class="num">{{ e.amount | eur }}</td></tr>{% endfor %}
+      <tr class="total"><td>Marge nette</td><td class="num {{ 'pos' if (a.margin or 0) > 0 else 'neg' }}">{{ a.margin | eur }}</td></tr>
+      </tbody>
+    </table>
+    <p class="muted small">{{ a.resale_method }}</p>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Fiabilité mécanique <span class="muted">· indice {{ a.reliability_score }}/100</span></h2>
+    {% for al in a.reliability_alerts %}
+    <div class="alert alert-{{ al.severity }}">
+      <strong>{{ al.title }}</strong>
+      <p>{{ al.detail }}</p>
+      {% if al.cost_high %}<small>Coût en cas de panne : {{ al.cost_low | eur }} – {{ al.cost_high | eur }} · probabilité indicative {{ (al.probability * 100) | round | int }} %</small>{% endif %}
+    </div>
+    {% else %}
+    <p class="muted">Aucun défaut connu recensé dans la base pour ce modèle et cette motorisation. Renseignez la version précise du moteur pour une détection plus fine.</p>
+    {% endfor %}
+    <p class="muted small">Base indicative de défauts largement documentés : à confirmer par l'historique d'entretien et une inspection.</p>
+  </section>
+
+  <section class="card">
+    <h2>Réparations estimées</h2>
+    {% if a.repairs_items %}
+    <table class="table compact">
+      <tbody>
+      {% for r in a.repairs_items %}
+      <tr class="{{ 'row-risk' if r.is_risk }}"><td>{{ r.label }}<div class="sub">{{ r.source }}</div></td>
+        <td class="num">{% if r.low == r.high %}{{ r.low | eur }}{% else %}{{ r.low | eur }} – {{ r.high | eur }}{% endif %}</td></tr>
+      {% endfor %}
+      <tr class="total"><td>Fourchette totale</td><td class="num">{{ a.repairs_low | eur }} – {{ a.repairs_high | eur }}</td></tr>
+      </tbody>
+    </table>
+    {% else %}<p class="muted">Aucun défaut déclaré. Ajoutez le bilan d'expertise dans « Modifier » pour affiner.</p>{% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Annonces comparables</h2><span class="muted">{{ a.comparables | length }} retenue(s)</span></div>
+  {% if a.comparables %}
+  <table class="table compact">
+    <thead><tr><th>Annonce</th><th>Source</th><th class="num">Année</th><th class="num">Km</th><th class="num">Prix affiché</th><th class="num">Prix ajusté</th></tr></thead>
+    <tbody>
+    {% for c in a.comparables %}<tr class="clickable" data-href="/annonces/{{ c.id }}"><td><a href="/annonces/{{ c.id }}">{{ c.title }}</a></td><td>{{ c.platform | platform }}</td><td class="num">{{ c.year or '—' }}</td><td class="num">{{ c.mileage_km | num }}</td><td class="num">{{ c.price | eur }}</td><td class="num">{{ c.adjusted | eur }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Aucune annonce du même modèle (±2 ans, kilométrage proche) dans la base. Importez des annonces Leboncoin ou La Centrale de {{ l.make or '' }} {{ l.model or '' }}, ou saisissez une cote.</p>
+  {% endif %}
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Suivi</h2>
+    <div class="row-gap">
+      <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="favori">
+        <button class="btn btn-sm" type="submit">{{ '★ Retirer des favoris' if l.favorite else '☆ Ajouter aux favoris' }}</button>
+      </form>
+      {% for k, lab in STATUS_LABELS.items() if k != l.status %}
+      <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="statut"><input type="hidden" name="status" value="{{ k }}">
+        <button class="btn btn-sm btn-ghost" type="submit">Marquer « {{ lab }} »</button>
+      </form>
+      {% endfor %}
+    </div>
+    <form method="post" action="/annonces/{{ l.id }}/suivi" class="form mt">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="notes">
+      <label>Notes personnelles<textarea name="notes" rows="4" maxlength="5000">{{ l.notes or '' }}</textarea></label>
+      <button class="btn btn-sm" type="submit">Enregistrer les notes</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Informations source</h2>
+    <dl class="dl">
+      <dt>Référence</dt><dd>{{ l.external_id }}</dd>
+      <dt>Version</dt><dd>{{ l.version or '—' }}</dd>
+      <dt>Mise en circulation</dt><dd>{{ l.first_registration | date }}</dd>
+      <dt>Cote saisie</dt><dd>{{ l.market_price_manual | eur }}</dd>
+      <dt>Ajoutée le</dt><dd>{{ l.first_seen_at | date }}</dd>
+      <dt>Analysée le</dt><dd>{{ a.computed_at | date }}</dd>
+    </dl>
+    {% if l.damages_text %}<h3>Description / défauts déclarés</h3><p class="prewrap">{{ l.damages_text }}</p>{% endif %}
+    {% if l.photos %}<div class="photos">{% for p in l.photos[:6] %}<img src="{{ p }}" alt="Photo du véhicule" loading="lazy" referrerpolicy="no-referrer">{% endfor %}</div>{% endif %}
+    <div class="row-gap mt">
+      <form method="post" action="/annonces/{{ l.id }}/suivi" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="reanalyser"><button class="btn btn-sm" type="submit">Recalculer l'analyse</button></form>
+      <form method="post" action="/annonces/{{ l.id }}/supprimer" class="inline" data-confirm="Supprimer définitivement cette annonce ?"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-danger" type="submit">Supprimer</button></form>
+    </div>
+  </section>
+</div>
+{% endblock %}

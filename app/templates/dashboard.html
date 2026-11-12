@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import score_badge, platform_tag, margin %}
+{% block title %}Tableau de bord{% endblock %}
+{% block heading %}Tableau de bord{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="/imports">Importer des annonces</a>{% endblock %}
+{% block content %}
+<section class="kpis">
+  <div class="kpi"><span>Véhicules suivis</span><strong>{{ total | num }}</strong><small>{{ by_platform | length }} plateforme(s)</small></div>
+  <div class="kpi"><span>Bonnes affaires</span><strong class="pos">{{ good_deals | num }}</strong><small>note ≥ 60 et marge positive</small></div>
+  <div class="kpi"><span>Note moyenne</span><strong>{{ (avg_score or 0) | round | int }}<small>/100</small></strong><small>&nbsp;</small></div>
+  <div class="kpi"><span>Marge moyenne des bonnes affaires</span><strong>{{ avg_margin_pct | pct }}</strong><small>meilleure marge : {{ best_margin | eur }}</small></div>
+</section>
+
+{% if total == 0 %}
+<div class="card onboarding">
+  <h2>Pour commencer</h2>
+  <ol class="steps">
+    <li><b>Importez des lots d'enchères</b> (Alcopa, VPauto, Domaine, BCA) : fichier CSV, page enregistrée (.html) ou texte copié-collé.</li>
+    <li><b>Importez des annonces du marché</b> (Leboncoin, La Centrale) du même modèle : elles servent de référence pour estimer le prix de revente.</li>
+    <li><b>Ajustez vos frais</b> (frais acheteur, carte grise, préparation) dans les paramètres.</li>
+  </ol>
+  <div class="row-gap"><a class="btn btn-primary" href="/imports">Importer</a><a class="btn" href="/annonces/nouvelle">Saisir un véhicule</a><a class="btn btn-ghost" href="/imports/modele.csv">Modèle CSV</a></div>
+</div>
+{% else %}
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>Meilleures affaires <small class="muted">· marge positive</small></h2><a href="/annonces" class="link">Tout voir →</a></div>
+    {% if top %}
+    <table class="table compact">
+      <thead><tr><th>Note</th><th>Véhicule</th><th class="num">Prix</th><th class="num">Marge</th></tr></thead>
+      <tbody>
+      {% for l in top %}
+        <tr class="clickable" data-href="/annonces/{{ l.id }}">
+          <td>{{ score_badge(l.analysis) }}</td>
+          <td><a href="/annonces/{{ l.id }}" class="strong">{{ l.title }}</a><div class="sub">{{ platform_tag(l.platform) }} {{ l.year or '' }} · {{ l.mileage_km | num }} km</div></td>
+          <td class="num">{{ l.price | eur }}</td>
+          <td class="num">{{ margin(l.analysis) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted">Aucune marge calculable pour l'instant : importez des annonces du marché (Leboncoin, La Centrale) pour les mêmes modèles, ou saisissez une cote sur les fiches.</p>{% endif %}
+  </section>
+  <div class="stack">
+    {% if no_resale %}
+    <section class="card card-warn">
+      <h3>{{ no_resale }} véhicule(s) sans estimation de revente</h3>
+      <p class="muted">Sans annonces comparables ni cote, la rentabilité ne peut pas être calculée et la note plafonne à 60/100.</p>
+      <a class="btn btn-sm" href="/imports?plateforme=leboncoin">Importer des comparables</a>
+    </section>
+    {% endif %}
+    <section class="card">
+      <h3>Par plateforme</h3>
+      <ul class="bars">
+      {% set maxc = (by_platform.values() | max) if by_platform else 1 %}
+      {% for k, n in by_platform | dictsort(by='value', reverse=true) %}
+        <li><span>{{ k | platform }}</span><span class="bar"><i data-width="{{ (n / maxc * 100) | round | int }}"></i></span><b>{{ n }}</b></li>
+      {% endfor %}
+      </ul>
+    </section>
+    {% if upcoming %}
+    <section class="card">
+      <h3>Prochaines fins d'enchères</h3>
+      <ul class="list">
+        {% for l in upcoming %}<li><a href="/annonces/{{ l.id }}">{{ l.title }}</a><span class="muted">{{ l.auction_end | date }}</span></li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+    <section class="card">
+      <h3>Derniers imports</h3>
+      <ul class="list">
+        {% for j in jobs %}<li><span>{{ j.platform | platform }} · {{ j.source }}</span><span class="muted">+{{ j.created_count }} / ↻{{ j.updated_count }} · {{ j.created_at | date }}</span></li>{% else %}<li class="muted">Aucun import.</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
